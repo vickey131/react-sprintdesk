@@ -1,6 +1,5 @@
-// import { BrokenTaskList } from "./features/tasks/components/BrokenTaskList";
-import StateSnapshot from "./features/tasks/components/Experiments";
+import { BrokenTaskList } from "./features/tasks/components/BrokenTaskList";
+
 export default function App() {
-  // return <BrokenTaskList initialTasks={[]} />;
-  return <StateSnapshot />
+  return <BrokenTaskList initialTasks={[]} />;
 }
