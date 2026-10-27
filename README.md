@@ -7,8 +7,10 @@ Tasks are stored in memory, so changes reset when the page is reloaded.
 ## Features
 
 - Display and manage tasks
+- Search tasks by title or description
 - Filter tasks by status
-- Sort tasks by priority
+- Filter tasks by priority
+- Sort tasks by priority or creation date (newest first)
 - Practise immutable state updates and derived state
 - Explore React rendering behaviour and component identity
 - Write unit and regression tests
@@ -61,16 +63,45 @@ Open the local URL displayed in your terminal.
 
 ```text
 src/
+├── App.css
+├── App.test.tsx
+├── App.tsx
+├── exercises/
+│   └── effect-exercises.tsx
 ├── features/
-│   ├── tasks/
-│   │   ├── components/
-│   │   └── model.ts
-│   └── rendering/
-└── lib/
+│   └── tasks/
+│       ├── TasksContext.ts
+│       ├── TasksContext.test.tsx
+│       ├── TasksProvider.tsx
+│       ├── index.ts
+│       ├── model.ts
+│       ├── tasksReducer.ts
+│       ├── tasksReducer.test.ts
+│       ├── useTasks.ts
+│       ├── components/
+│       │   ├── BrokenTaskList.tsx
+│       │   ├── BrokenTaskList.test.tsx
+│       │   ├── Experiments.tsx
+│       │   ├── TaskForm.tsx
+│       │   └── TaskForm.test.tsx
+│       └── hooks/
+│           ├── useDebouncedValue.ts
+│           ├── useDebouncedValue.test.ts
+│           ├── useLocalStorage.ts
+│           ├── useLocalStorage.test.ts
+│           ├── useTaskFilters.ts
+│           └── useTaskFilters.test.ts
+├── index.css
+├── lib/
+│   ├── exercises.ts
+│   └── exercises.test.ts
+├── main.tsx
+
 docs/
+public/
 ```
 
-The structure groups task-related functionality, reusable utilities, and learning documentation.
+The structure groups task logic, UI components, reusable hooks, learning exercises, and documentation for the SprintDesk app.
 
 ## Learning Goals
 
@@ -82,4 +113,3 @@ This project is a hands-on exercise in:
 - Component keys and identity
 - Regression testing with Vitest and React Testing Library
 - Git commits and version control
-
