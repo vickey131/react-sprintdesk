@@ -1,28 +1,24 @@
 
-import { useState } from "react";
 import { useTasks } from "..";
-
-const PRIORITY_ORDER = {
-  high: 0,
-  medium: 1,
-  low: 2,
-} as const;
+import { useTaskFilters } from "../hooks/useTaskFilters";
 
 export function BrokenTaskList() {
   const { tasks, dispatch } = useTasks();
-  const [showCompleted, setShowCompleted] = useState(true);
-  const [sortByPriority, setSortByPriority] = useState(false);
-
-  const visibleTasks = (showCompleted
-    ? tasks
-    : tasks.filter((task) => task.status !== "done")
-  ).slice();
-
-  if (sortByPriority) {
-    visibleTasks.sort(
-      (a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority]
-    );
-  }
+  const {
+    visibleTasks,
+    showCompleted,
+    setShowCompleted,
+    sortByPriority,
+    setSortByPriority,
+    sortByDate,
+    setSortByDate,
+    searchQuery,
+    setSearchQuery,
+    statusFilter,
+    setStatusFilter,
+    priorityFilter,
+    setPriorityFilter,
+  } = useTaskFilters(tasks);
 
   const completedCount = tasks.filter((task) => task.status === "done").length;
 
@@ -43,11 +39,57 @@ export function BrokenTaskList() {
         Show completed
       </label>
 
+      <label>
+        Search tasks
+        <input
+          type="search"
+          value={searchQuery}
+          onChange={(event) => setSearchQuery(event.target.value)}
+        />
+      </label>
+
+      <label>
+        Filter by status
+        <select
+          value={statusFilter}
+          onChange={(event) =>
+            setStatusFilter(event.target.value as typeof statusFilter)
+          }
+        >
+          <option value="all">All statuses</option>
+          <option value="todo">To do</option>
+          <option value="in_progress">In progress</option>
+          <option value="done">Done</option>
+        </select>
+      </label>
+
+      <label>
+        Filter by priority
+        <select
+          value={priorityFilter}
+          onChange={(event) =>
+            setPriorityFilter(event.target.value as typeof priorityFilter)
+          }
+        >
+          <option value="all">All priorities</option>
+          <option value="high">High</option>
+          <option value="medium">Medium</option>
+          <option value="low">Low</option>
+        </select>
+      </label>
+
       <button
         type="button"
         onClick={() => setSortByPriority((current) => !current)}
       >
         {sortByPriority ? "Clear priority sort" : "Sort by priority"}
+      </button>
+
+      <button
+        type="button"
+        onClick={() => setSortByDate((current) => !current)}
+      >
+        {sortByDate ? "Clear date sort" : "Sort by date"}
       </button>
 
       <ul>

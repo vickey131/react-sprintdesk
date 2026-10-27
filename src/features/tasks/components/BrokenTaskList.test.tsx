@@ -101,4 +101,43 @@ describe("BrokenTaskList", () => {
     expect(renderedTitles).toEqual(["Second task", "First task"]);
     expect(initialTasks.map((task) => task.id)).toEqual(["1", "2"]);
   });
+
+  it("searches tasks by title", () => {
+    renderTaskList();
+
+    fireEvent.change(screen.getByRole("searchbox", { name: "Search tasks" }), {
+      target: { value: "second" },
+    });
+
+    expect(screen.queryByText("First task")).toBeNull();
+    expect(screen.getByText("Second task")).toBeTruthy();
+  });
+
+  it("filters tasks by status and priority", () => {
+    const initialTasks = createTasks().map((task) =>
+      task.id === "1" ? { ...task, status: "done" as const } : task
+    );
+    renderTaskList(initialTasks);
+
+    fireEvent.change(screen.getByLabelText("Filter by status"), {
+      target: { value: "done" },
+    });
+    fireEvent.change(screen.getByLabelText("Filter by priority"), {
+      target: { value: "low" },
+    });
+
+    expect(screen.getByText("First task")).toBeTruthy();
+    expect(screen.queryByText("Second task")).toBeNull();
+  });
+
+  it("sorts tasks by newest creation date", () => {
+    renderTaskList();
+
+    fireEvent.click(screen.getByRole("button", { name: "Sort by date" }));
+
+    const renderedTitles = screen
+      .getAllByRole("listitem")
+      .map((item) => item.querySelector("span")?.textContent);
+    expect(renderedTitles).toEqual(["Second task", "First task"]);
+  });
 });
