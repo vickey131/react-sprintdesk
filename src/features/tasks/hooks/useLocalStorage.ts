@@ -1,4 +1,10 @@
-import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
+import {
+  useCallback,
+  useEffect,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 
 export function useLocalStorage<T>(
   key: string,
@@ -27,22 +33,25 @@ export function useLocalStorage<T>(
     window.localStorage.setItem(key, serializedValue);
   }, [key, value]);
 
-  const setValue: Dispatch<SetStateAction<T>> = (nextValue) => {
-    setStoredState((currentState) => {
-      const currentValue =
-        currentState.key === key
-          ? currentState.value
-          : readStoredValue(key, initialValue);
+  const setValue = useCallback<Dispatch<SetStateAction<T>>>(
+    (nextValue) => {
+      setStoredState((currentState) => {
+        const currentValue =
+          currentState.key === key
+            ? currentState.value
+            : readStoredValue(key, initialValue);
 
-      return {
-        key,
-        value:
-          typeof nextValue === "function"
-            ? (nextValue as (previousValue: T) => T)(currentValue)
-            : nextValue,
-      };
-    });
-  };
+        return {
+          key,
+          value:
+            typeof nextValue === "function"
+              ? (nextValue as (previousValue: T) => T)(currentValue)
+              : nextValue,
+        };
+      });
+    },
+    [initialValue, key]
+  );
 
   return [value, setValue];
 }

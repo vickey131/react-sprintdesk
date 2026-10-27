@@ -5,7 +5,7 @@ import {
   render,
   screen,
 } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Task } from "../model";
 import { TasksProvider, useTasks } from "..";
 import { BrokenTaskList } from "./BrokenTaskList";
@@ -13,6 +13,10 @@ import { BrokenTaskList } from "./BrokenTaskList";
 afterEach(() => {
   cleanup();
   vi.useRealTimers();
+});
+
+beforeEach(() => {
+  window.localStorage.clear();
 });
 
 function createTasks(): Task[] {

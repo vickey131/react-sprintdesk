@@ -1,10 +1,15 @@
 import { act, cleanup, renderHook } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { Task } from "./model";
 import { TasksProvider, useTasks } from ".";
 
 afterEach(() => {
   cleanup();
+  window.localStorage.clear();
+});
+
+beforeEach(() => {
+  window.localStorage.clear();
 });
 
 const task: Task = {
@@ -31,6 +36,30 @@ describe("TasksProvider and useTasks", () => {
     });
 
     expect(result.current.tasks).toEqual([task]);
+  });
+
+  it("loads tasks from local storage", () => {
+    window.localStorage.setItem("sprintdesk-tasks", JSON.stringify([task]));
+
+    const { result } = renderHook(() => useTasks(), {
+      wrapper: TasksProvider,
+    });
+
+    expect(result.current.tasks).toEqual([task]);
+  });
+
+  it("persists task updates to local storage", () => {
+    const { result } = renderHook(() => useTasks(), {
+      wrapper: TasksProvider,
+    });
+
+    act(() => {
+      result.current.dispatch({ type: "add", task });
+    });
+
+    expect(window.localStorage.getItem("sprintdesk-tasks")).toBe(
+      JSON.stringify([task])
+    );
   });
 
   it("throws a helpful error when used outside TasksProvider", () => {
