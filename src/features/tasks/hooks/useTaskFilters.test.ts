@@ -1,10 +1,11 @@
 import { act, cleanup, renderHook } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Task } from "../model";
 import { useTaskFilters } from "./useTaskFilters";
 
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
 });
 
 function createTasks(): Task[] {
@@ -84,10 +85,21 @@ describe("useTaskFilters", () => {
   });
 
   it("searches task titles and descriptions without case sensitivity", () => {
+    vi.useFakeTimers();
     const { result } = renderHook(() => useTaskFilters(createTasks()));
 
     act(() => {
       result.current.setSearchQuery("COMPLETED");
+    });
+
+    expect(result.current.visibleTasks.map((task) => task.id)).toEqual([
+      "1",
+      "2",
+      "3",
+    ]);
+
+    act(() => {
+      vi.advanceTimersByTime(300);
     });
 
     expect(result.current.visibleTasks.map((task) => task.id)).toEqual(["2"]);

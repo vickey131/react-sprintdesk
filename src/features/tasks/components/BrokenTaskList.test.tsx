@@ -1,16 +1,18 @@
 import {
+  act,
   cleanup,
   fireEvent,
   render,
   screen,
 } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Task } from "../model";
 import { TasksProvider, useTasks } from "..";
 import { BrokenTaskList } from "./BrokenTaskList";
 
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
 });
 
 function createTasks(): Task[] {
@@ -103,10 +105,16 @@ describe("BrokenTaskList", () => {
   });
 
   it("searches tasks by title", () => {
+    vi.useFakeTimers();
     renderTaskList();
 
     fireEvent.change(screen.getByRole("searchbox", { name: "Search tasks" }), {
       target: { value: "second" },
+    });
+
+    expect(screen.getByText("First task")).toBeTruthy();
+    act(() => {
+      vi.advanceTimersByTime(300);
     });
 
     expect(screen.queryByText("First task")).toBeNull();
@@ -128,6 +136,41 @@ describe("BrokenTaskList", () => {
 
     expect(screen.getByText("First task")).toBeTruthy();
     expect(screen.queryByText("Second task")).toBeNull();
+  });
+
+  it("counts every task by status regardless of active filters", () => {
+    const initialTasks = createTasks().map((task) =>
+      task.id === "1"
+        ? { ...task, status: "in_progress" as const }
+        : { ...task, status: "done" as const }
+    );
+    renderTaskList(initialTasks);
+
+    expect(screen.getByText(/To do: 0/)).toBeTruthy();
+    expect(screen.getByText(/In progress: 1/)).toBeTruthy();
+    expect(screen.getByText(/Done: 1/)).toBeTruthy();
+
+    fireEvent.change(screen.getByLabelText("Filter by status"), {
+      target: { value: "in_progress" },
+    });
+
+    expect(screen.getByText(/Done: 1/)).toBeTruthy();
+  });
+
+  it("shows a distinct empty state when there are no tasks", () => {
+    renderTaskList([]);
+
+    expect(screen.getByText("No tasks yet.")).toBeTruthy();
+  });
+
+  it("shows a distinct empty state when filters match no tasks", () => {
+    renderTaskList();
+
+    fireEvent.change(screen.getByLabelText("Filter by status"), {
+      target: { value: "done" },
+    });
+
+    expect(screen.getByText("No tasks match your filters.")).toBeTruthy();
   });
 
   it("sorts tasks by newest creation date", () => {

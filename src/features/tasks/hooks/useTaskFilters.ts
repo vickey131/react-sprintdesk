@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { Priority, Task, TaskStatus } from "../model";
+import { useDebouncedValue } from "./useDebouncedValue";
 
 type StatusFilter = TaskStatus | "all";
 type PriorityFilter = Priority | "all";
@@ -19,7 +20,8 @@ export function useTaskFilters(tasks: Task[]) {
   const [priorityFilter, setPriorityFilter] =
     useState<PriorityFilter>("all");
 
-  const normalizedQuery = searchQuery.trim().toLocaleLowerCase();
+  const debouncedSearchQuery = useDebouncedValue(searchQuery, 300);
+  const normalizedQuery = debouncedSearchQuery.trim().toLocaleLowerCase();
   const visibleTasks = tasks.filter((task) => {
     const matchesSearch =
       normalizedQuery.length === 0 ||

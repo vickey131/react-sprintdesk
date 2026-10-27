@@ -21,6 +21,11 @@ export function BrokenTaskList() {
   } = useTaskFilters(tasks);
 
   const completedCount = tasks.filter((task) => task.status === "done").length;
+  const statusCounts = {
+    todo: tasks.filter((task) => task.status === "todo").length,
+    inProgress: tasks.filter((task) => task.status === "in_progress").length,
+    done: completedCount,
+  };
 
   return (
     <section aria-labelledby="tasks-heading">
@@ -28,6 +33,11 @@ export function BrokenTaskList() {
 
       <p>
         {completedCount} of {tasks.length} completed
+      </p>
+
+      <p>
+        To do: {statusCounts.todo} | In progress: {statusCounts.inProgress} |
+        Done: {statusCounts.done}
       </p>
 
       <label>
@@ -93,27 +103,33 @@ export function BrokenTaskList() {
       </button>
 
       <ul>
-        {visibleTasks.map((task) => (
-          <li key={task.id}>
-            <input
-              type="checkbox"
-              aria-label={`Complete ${task.title}`}
-              checked={task.status === "done"}
-              onChange={() => dispatch({ type: "toggle", id: task.id })}
-            />
+        {tasks.length === 0 ? (
+          <li>No tasks yet.</li>
+        ) : visibleTasks.length === 0 ? (
+          <li>No tasks match your filters.</li>
+        ) : (
+          visibleTasks.map((task) => (
+            <li key={task.id}>
+              <input
+                type="checkbox"
+                aria-label={`Complete ${task.title}`}
+                checked={task.status === "done"}
+                onChange={() => dispatch({ type: "toggle", id: task.id })}
+              />
 
-            <span>{task.title}</span>{" "}
-            <small>({task.priority})</small>
-            <small> - {task.status.replace("_", " ")}</small>
+              <span>{task.title}</span>{" "}
+              <small>({task.priority})</small>
+              <small> - {task.status.replace("_", " ")}</small>
 
-            <button
-              type="button"
-              onClick={() => dispatch({ type: "delete", id: task.id })}
-            >
-              Delete
-            </button>
-          </li>
-        ))}
+              <button
+                type="button"
+                onClick={() => dispatch({ type: "delete", id: task.id })}
+              >
+                Delete
+              </button>
+            </li>
+          ))
+        )}
       </ul>
     </section>
   );
