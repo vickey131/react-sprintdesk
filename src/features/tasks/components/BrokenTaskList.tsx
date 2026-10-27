@@ -1,75 +1,31 @@
 
-import { useState, type FormEvent } from "react";
+import { useTasks } from "..";
+import { useTaskFilters } from "../hooks/useTaskFilters";
 
-export type Priority = "low" | "medium" | "high";
+export function BrokenTaskList() {
+  const { tasks, dispatch } = useTasks();
+  const {
+    visibleTasks,
+    showCompleted,
+    setShowCompleted,
+    sortByPriority,
+    setSortByPriority,
+    sortByDate,
+    setSortByDate,
+    searchQuery,
+    setSearchQuery,
+    statusFilter,
+    setStatusFilter,
+    priorityFilter,
+    setPriorityFilter,
+  } = useTaskFilters(tasks);
 
-export interface Task {
-  id: string;
-  title: string;
-  done: boolean;
-  priority: Priority;
-}
-
-const PRIORITY_ORDER: Record<Priority, number> = {
-  high: 0,
-  medium: 1,
-  low: 2,
-};
-
-interface BrokenTaskListProps {
-  initialTasks: Task[];
-}
-
-export function BrokenTaskList({ initialTasks }: BrokenTaskListProps) {
-  const [tasks, setTasks] = useState<Task[]>(() => [...initialTasks]);
-  const [title, setTitle] = useState("");
-  const [showCompleted, setShowCompleted] = useState(true);
-
-  // Derive values from the current task state instead of duplicating state.
-  const visibleTasks = showCompleted
-    ? tasks
-    : tasks.filter((task) => !task.done);
-
-  const completedCount = tasks.filter((task) => task.done).length;
-
-  function addTask(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    const trimmedTitle = title.trim();
-    if (trimmedTitle.length < 3) return;
-
-    const newTask: Task = {
-      id: crypto.randomUUID(),
-      title: trimmedTitle,
-      done: false,
-      priority: "medium",
-    };
-
-    setTasks((currentTasks) => [...currentTasks, newTask]);
-    setTitle("");
-  }
-
-  function toggleTask(id: string) {
-    setTasks((currentTasks) =>
-      currentTasks.map((task) =>
-        task.id === id ? { ...task, done: !task.done } : task
-      )
-    );
-  }
-
-  function deleteTask(id: string) {
-    setTasks((currentTasks) =>
-      currentTasks.filter((task) => task.id !== id)
-    );
-  }
-
-  function sortByPriority() {
-    setTasks((currentTasks) =>
-      [...currentTasks].sort(
-        (a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority]
-      )
-    );
-  }
+  const completedCount = tasks.filter((task) => task.status === "done").length;
+  const statusCounts = {
+    todo: tasks.filter((task) => task.status === "todo").length,
+    inProgress: tasks.filter((task) => task.status === "in_progress").length,
+    done: completedCount,
+  };
 
   return (
     <section aria-labelledby="tasks-heading">
@@ -79,15 +35,10 @@ export function BrokenTaskList({ initialTasks }: BrokenTaskListProps) {
         {completedCount} of {tasks.length} completed
       </p>
 
-      <form onSubmit={addTask}>
-        <label htmlFor="new-task">New task</label>
-        <input
-          id="new-task"
-          value={title}
-          onChange={(event) => setTitle(event.target.value)}
-        />
-        <button type="submit">Add</button>
-      </form>
+      <p>
+        To do: {statusCounts.todo} | In progress: {statusCounts.inProgress} |
+        Done: {statusCounts.done}
+      </p>
 
       <label>
         <input
@@ -98,33 +49,87 @@ export function BrokenTaskList({ initialTasks }: BrokenTaskListProps) {
         Show completed
       </label>
 
-      <button type="button" onClick={sortByPriority}>
-        Sort by priority
+      <label>
+        Search tasks
+        <input
+          type="search"
+          value={searchQuery}
+          onChange={(event) => setSearchQuery(event.target.value)}
+        />
+      </label>
+
+      <label>
+        Filter by status
+        <select
+          value={statusFilter}
+          onChange={(event) =>
+            setStatusFilter(event.target.value as typeof statusFilter)
+          }
+        >
+          <option value="all">All statuses</option>
+          <option value="todo">To do</option>
+          <option value="in_progress">In progress</option>
+          <option value="done">Done</option>
+        </select>
+      </label>
+
+      <label>
+        Filter by priority
+        <select
+          value={priorityFilter}
+          onChange={(event) =>
+            setPriorityFilter(event.target.value as typeof priorityFilter)
+          }
+        >
+          <option value="all">All priorities</option>
+          <option value="high">High</option>
+          <option value="medium">Medium</option>
+          <option value="low">Low</option>
+        </select>
+      </label>
+
+      <button
+        type="button"
+        onClick={() => setSortByPriority((current) => !current)}
+      >
+        {sortByPriority ? "Clear priority sort" : "Sort by priority"}
+      </button>
+
+      <button
+        type="button"
+        onClick={() => setSortByDate((current) => !current)}
+      >
+        {sortByDate ? "Clear date sort" : "Sort by date"}
       </button>
 
       <ul>
-        {visibleTasks.map((task) => (
-          <li key={task.id}>
-            <input
-              type="checkbox"
-              aria-label={`Complete ${task.title}`}
-              checked={task.done}
-              onChange={() => toggleTask(task.id)}
-            />
+        {tasks.length === 0 ? (
+          <li>No tasks yet.</li>
+        ) : visibleTasks.length === 0 ? (
+          <li>No tasks match your filters.</li>
+        ) : (
+          visibleTasks.map((task) => (
+            <li key={task.id}>
+              <input
+                type="checkbox"
+                aria-label={`Complete ${task.title}`}
+                checked={task.status === "done"}
+                onChange={() => dispatch({ type: "toggle", id: task.id })}
+              />
 
-            <span>{task.title}</span>{" "}
-            <small>({task.priority})</small>
+              <span>{task.title}</span>{" "}
+              <small>({task.priority})</small>
+              <small> - {task.status.replace("_", " ")}</small>
 
-            <input
-              aria-label={`Notes for ${task.title}`}
-              placeholder="Notes"
-            />
-
-            <button type="button" onClick={() => deleteTask(task.id)}>
-              Delete
-            </button>
-          </li>
-        ))}
+              <button
+                type="button"
+                onClick={() => dispatch({ type: "delete", id: task.id })}
+              >
+                Delete
+              </button>
+            </li>
+          ))
+        )}
       </ul>
     </section>
   );
