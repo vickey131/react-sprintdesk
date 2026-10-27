@@ -1,19 +1,18 @@
 # SprintDesk
 
-SprintDesk is a small React task manager built to practise React, TypeScript, state management, and frontend testing.
+SprintDesk is a small React task manager built with React and TypeScript.
 
-Tasks are stored in memory, so changes reset when the page is reloaded.
+Tasks are saved in the browser's local storage and stay available after a reload.
 
 ## Features
 
-- Display and manage tasks
+- Create tasks with a title, description, priority, and status
+- Mark tasks complete or move them back to to do, and delete tasks
 - Search tasks by title or description
-- Filter tasks by status
-- Filter tasks by priority
-- Sort tasks by priority or creation date (newest first)
-- Practise immutable state updates and derived state
-- Explore React rendering behaviour and component identity
-- Write unit and regression tests
+- Filter by status or priority, or hide completed tasks
+- Sort by priority or creation date (newest first)
+- See completed and per-status task counts
+- Keep tasks between visits with local storage
 
 ## Tech Stack
 
@@ -98,6 +97,7 @@ src/
 ├── main.tsx
 
 docs/
+└── state-map.md
 public/
 ```
 
