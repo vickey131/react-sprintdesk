@@ -1,14 +1,17 @@
 import {
-  act,
   cleanup,
   fireEvent,
   render,
   screen,
+  waitFor,
 } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { http, HttpResponse } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Task } from "../model";
-import { TasksProvider, useTasks } from "..";
 import { BrokenTaskList } from "./BrokenTaskList";
+import { resetTasks } from "../../../shared/mocks/handlers";
+import { server } from "../../../shared/mocks/server";
 
 afterEach(() => {
   cleanup();
@@ -44,50 +47,38 @@ function createTasks(): Task[] {
   ];
 }
 
-function TaskListHarness({ initialTasks }: { initialTasks: Task[] }) {
-  const { dispatch } = useTasks();
-
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() =>
-          initialTasks.forEach((task) => dispatch({ type: "add", task }))
-        }
-      >
-        Load tasks
-      </button>
-      <BrokenTaskList />
-    </>
-  );
-}
-
-function renderTaskList(initialTasks = createTasks()) {
+async function renderTaskList(initialTasks = createTasks()) {
+  resetTasks(initialTasks);
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
   render(
-    <TasksProvider>
-      <TaskListHarness initialTasks={initialTasks} />
-    </TasksProvider>
+    <QueryClientProvider client={queryClient}>
+      <BrokenTaskList />
+    </QueryClientProvider>,
   );
-  fireEvent.click(screen.getByRole("button", { name: "Load tasks" }));
+  await screen.findByText(initialTasks.length ? initialTasks[0].title : "No tasks yet.");
 }
 
 describe("BrokenTaskList", () => {
-  it("shares task completion and deletion with the provider state", () => {
-    renderTaskList();
+  it("completes and deletes tasks through the API", async () => {
+    await renderTaskList();
 
     fireEvent.click(screen.getByLabelText("Complete First task"));
-    expect(screen.getByText("1 of 2 completed")).toBeTruthy();
+    await screen.findByText("1 of 2 completed");
 
     fireEvent.click(screen.getAllByRole("button", { name: "Delete" })[0]);
-    expect(screen.queryByText("First task")).toBeNull();
-    expect(screen.getByText("0 of 1 completed")).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.queryByText("First task")).toBeNull();
+      expect(screen.getByText("0 of 1 completed")).toBeTruthy();
+    });
   });
 
-  it("filters completed tasks without changing shared state", () => {
+  it("filters completed tasks without changing API data", async () => {
     const initialTasks = createTasks().map((task) =>
       task.id === "1" ? { ...task, status: "done" as const } : task
     );
-    renderTaskList(initialTasks);
+    await renderTaskList(initialTasks);
 
     fireEvent.click(screen.getByLabelText("Show completed"));
 
@@ -95,9 +86,9 @@ describe("BrokenTaskList", () => {
     expect(screen.getByText("1 of 2 completed")).toBeTruthy();
   });
 
-  it("sorts a derived list without mutating the shared task order", () => {
+  it("sorts a derived list without mutating the API task order", async () => {
     const initialTasks = createTasks();
-    renderTaskList(initialTasks);
+    await renderTaskList(initialTasks);
 
     fireEvent.click(screen.getByRole("button", { name: "Sort by priority" }));
 
@@ -108,28 +99,27 @@ describe("BrokenTaskList", () => {
     expect(initialTasks.map((task) => task.id)).toEqual(["1", "2"]);
   });
 
-  it("searches tasks by title", () => {
+  it("searches tasks by title", async () => {
+    await renderTaskList();
     vi.useFakeTimers();
-    renderTaskList();
 
     fireEvent.change(screen.getByRole("searchbox", { name: "Search tasks" }), {
       target: { value: "second" },
     });
 
     expect(screen.getByText("First task")).toBeTruthy();
-    act(() => {
-      vi.advanceTimersByTime(300);
-    });
+    await vi.advanceTimersByTimeAsync(300);
+    vi.useRealTimers();
 
+    expect(await screen.findByText("Second task")).toBeTruthy();
     expect(screen.queryByText("First task")).toBeNull();
-    expect(screen.getByText("Second task")).toBeTruthy();
   });
 
-  it("filters tasks by status and priority", () => {
+  it("filters tasks by status and priority", async () => {
     const initialTasks = createTasks().map((task) =>
       task.id === "1" ? { ...task, status: "done" as const } : task
     );
-    renderTaskList(initialTasks);
+    await renderTaskList(initialTasks);
 
     fireEvent.change(screen.getByLabelText("Filter by status"), {
       target: { value: "done" },
@@ -138,17 +128,19 @@ describe("BrokenTaskList", () => {
       target: { value: "low" },
     });
 
-    expect(screen.getByText("First task")).toBeTruthy();
-    expect(screen.queryByText("Second task")).toBeNull();
+    await waitFor(() => {
+      expect(screen.getByText("First task")).toBeTruthy();
+      expect(screen.queryByText("Second task")).toBeNull();
+    });
   });
 
-  it("counts every task by status regardless of active filters", () => {
+  it("counts every task by status regardless of active filters", async () => {
     const initialTasks = createTasks().map((task) =>
       task.id === "1"
         ? { ...task, status: "in_progress" as const }
         : { ...task, status: "done" as const }
     );
-    renderTaskList(initialTasks);
+    await renderTaskList(initialTasks);
 
     expect(screen.getByText(/To do: 0/)).toBeTruthy();
     expect(screen.getByText(/In progress: 1/)).toBeTruthy();
@@ -161,24 +153,54 @@ describe("BrokenTaskList", () => {
     expect(screen.getByText(/Done: 1/)).toBeTruthy();
   });
 
-  it("shows a distinct empty state when there are no tasks", () => {
-    renderTaskList([]);
+  it("shows a distinct empty state when there are no tasks", async () => {
+    await renderTaskList([]);
 
     expect(screen.getByText("No tasks yet.")).toBeTruthy();
   });
 
-  it("shows a distinct empty state when filters match no tasks", () => {
-    renderTaskList();
+  it("shows a distinct empty state when filters match no tasks", async () => {
+    await renderTaskList();
 
     fireEvent.change(screen.getByLabelText("Filter by status"), {
       target: { value: "done" },
     });
 
-    expect(screen.getByText("No tasks match your filters.")).toBeTruthy();
+    await screen.findByText("No tasks match your filters.");
   });
 
-  it("sorts tasks by newest creation date", () => {
-    renderTaskList();
+  it("shows an API error and retries the failed request", async () => {
+    let shouldFail = true;
+    server.use(
+      http.get("*/api/tasks", () =>
+        shouldFail
+          ? HttpResponse.json(
+              { message: "Service unavailable" },
+              { status: 503 },
+            )
+          : HttpResponse.json(createTasks()),
+      ),
+    );
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <BrokenTaskList />
+      </QueryClientProvider>,
+    );
+
+    expect((await screen.findByRole("alert")).textContent).toBe(
+      "Unable to load tasks: Service unavailable",
+    );
+    shouldFail = false;
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+
+    expect(await screen.findByText("First task")).toBeTruthy();
+  });
+
+  it("sorts tasks by newest creation date", async () => {
+    await renderTaskList();
 
     fireEvent.click(screen.getByRole("button", { name: "Sort by date" }));
 

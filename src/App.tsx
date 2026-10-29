@@ -3,30 +3,19 @@ import {
   TaskForm,
   type TaskFormValues,
 } from "./features/tasks/components/TaskForm";
-import { TasksProvider, useTasks } from "./features/tasks";
+import { useTaskMutations } from "./features/tasks/hooks/useTaskMutations";
 
 export default function App() {
-  return (
-    <TasksProvider>
-      <TaskManager />
-    </TasksProvider>
-  );
+  return <TaskManager />;
 }
 
 function TaskManager() {
-  const { dispatch } = useTasks();
+  const { createTaskMutation } = useTaskMutations();
 
   function createTask(values: TaskFormValues) {
-    const now = new Date().toISOString();
-    dispatch({
-      type: "add",
-      task: {
-        ...values,
-        id: crypto.randomUUID(),
-        assigneeId: null,
-        createdAt: now,
-        updatedAt: now,
-      },
+    createTaskMutation.mutate({
+      ...values,
+      assigneeId: null,
     });
   }
 
@@ -34,6 +23,9 @@ function TaskManager() {
     <main>
       <h1>SprintDesk</h1>
       <TaskForm onSubmit={createTask} />
+      {createTaskMutation.isError && (
+        <p role="alert">{createTaskMutation.error.message}</p>
+      )}
       <BrokenTaskList />
     </main>
   );

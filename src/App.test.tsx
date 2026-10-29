@@ -1,4 +1,5 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, describe, expect, it } from "vitest";
 import App from "./App";
 
@@ -7,8 +8,17 @@ afterEach(() => {
 });
 
 describe("App task workflow", () => {
-  it("adds a form submission to the task list shared state", () => {
-    render(<App />);
+  it("adds a submitted task to the API-backed task list", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <App />
+      </QueryClientProvider>,
+    );
+
+    await screen.findByText("Build task list");
 
     fireEvent.change(screen.getByLabelText("Title"), {
       target: { value: "Plan sprint" },
@@ -21,10 +31,10 @@ describe("App task workflow", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Create task" }));
 
-    expect(screen.getByText("Plan sprint")).toBeTruthy();
-    expect(screen.getByText("0 of 1 completed")).toBeTruthy();
+    expect(await screen.findByText("Plan sprint")).toBeTruthy();
+    expect(await screen.findByText("1 of 4 completed")).toBeTruthy();
 
     fireEvent.click(screen.getByLabelText("Complete Plan sprint"));
-    expect(screen.getByText("1 of 1 completed")).toBeTruthy();
+    expect(await screen.findByText("2 of 4 completed")).toBeTruthy();
   });
 });

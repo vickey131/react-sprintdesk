@@ -22,34 +22,40 @@ export function useTaskFilters(tasks: Task[]) {
 
   const debouncedSearchQuery = useDebouncedValue(searchQuery, 300);
   const normalizedQuery = debouncedSearchQuery.trim().toLocaleLowerCase();
-  const visibleTasks = tasks.filter((task) => {
-    const matchesSearch =
-      normalizedQuery.length === 0 ||
-      task.title.toLocaleLowerCase().includes(normalizedQuery) ||
-      task.description.toLocaleLowerCase().includes(normalizedQuery);
+  function getVisibleTasks(tasksToFilter: Task[]) {
+    const visibleTasks = tasksToFilter.filter((task) => {
+      const matchesSearch =
+        normalizedQuery.length === 0 ||
+        task.title.toLocaleLowerCase().includes(normalizedQuery) ||
+        task.description.toLocaleLowerCase().includes(normalizedQuery);
 
-    return (
-      matchesSearch &&
-      (showCompleted || task.status !== "done") &&
-      (statusFilter === "all" || task.status === statusFilter) &&
-      (priorityFilter === "all" || task.priority === priorityFilter)
-    );
-  });
+      return (
+        matchesSearch &&
+        (showCompleted || task.status !== "done") &&
+        (statusFilter === "all" || task.status === statusFilter) &&
+        (priorityFilter === "all" || task.priority === priorityFilter)
+      );
+    });
 
-  if (sortByDate) {
-    visibleTasks.sort(
-      (first, second) =>
-        Date.parse(second.createdAt) - Date.parse(first.createdAt)
-    );
-  } else if (sortByPriority) {
-    visibleTasks.sort(
-      (first, second) =>
-        PRIORITY_ORDER[first.priority] - PRIORITY_ORDER[second.priority]
-    );
+    if (sortByDate) {
+      visibleTasks.sort(
+        (first, second) =>
+          Date.parse(second.createdAt) - Date.parse(first.createdAt)
+      );
+    } else if (sortByPriority) {
+      visibleTasks.sort(
+        (first, second) =>
+          PRIORITY_ORDER[first.priority] - PRIORITY_ORDER[second.priority]
+      );
+    }
+
+    return visibleTasks;
   }
 
   return {
-    visibleTasks,
+    visibleTasks: getVisibleTasks(tasks),
+    getVisibleTasks,
+    debouncedSearchQuery: normalizedQuery,
     showCompleted,
     setShowCompleted,
     sortByPriority,

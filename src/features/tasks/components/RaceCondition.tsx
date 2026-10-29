@@ -30,20 +30,25 @@ const mockSearch = (query: string, signal?: AbortSignal): Promise<SearchResult> 
       clearTimeout(timeoutId);
       reject(new DOMException("Request aborted", "AbortError"));
     }
-  });
+});
   
 export default function RaceCondition() {
   const [query, setQuery] = useState("react");
   const [useCancellation, setUseCancellation] = useState(false);
   const [result, setResult] = useState<SearchResult | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [requestId, setRequestId] = useState(0);
+  const [completedRequestId, setCompletedRequestId] = useState<number | null>(
+    null,
+  );
+  const [requestError, setRequestError] = useState<{
+    requestId: number;
+    message: string;
+  } | null>(null);
+  const loading = completedRequestId !== requestId;
+  const error = requestError?.requestId === requestId ? requestError.message : null;
 
   useEffect(() => {
     const controller = useCancellation ? new AbortController() : undefined;
-
-    setLoading(true);
-    setError(null);
 
     mockSearch(query, controller?.signal)
       .then(setResult)
@@ -52,16 +57,19 @@ export default function RaceCondition() {
           return;
         }
 
-        setError("Failed to load results.");
+        setRequestError({
+          requestId,
+          message: "Failed to load results.",
+        });
       })
       .finally(() => {
-        setLoading(false);
+        setCompletedRequestId(requestId);
       });
 
     return () => {
       controller?.abort();
     };
-  }, [query, useCancellation]);
+  }, [query, requestId, useCancellation]);
 
   return (
     <section>
@@ -71,7 +79,10 @@ export default function RaceCondition() {
         Search query:{" "}
         <input
           value={query}
-          onChange={(event) => setQuery(event.target.value)}
+          onChange={(event) => {
+            setQuery(event.target.value);
+            setRequestId((current) => current + 1);
+          }}
         />
       </label>
 
@@ -80,7 +91,10 @@ export default function RaceCondition() {
           <input
             type="checkbox"
             checked={useCancellation}
-            onChange={(event) => setUseCancellation(event.target.checked)}
+            onChange={(event) => {
+              setUseCancellation(event.target.checked);
+              setRequestId((current) => current + 1);
+            }}
           />
           Enable AbortController
         </label>
