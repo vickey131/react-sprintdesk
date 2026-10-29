@@ -9,7 +9,7 @@ In a search UI, multiple requests can run while the user types. A slower, older 
 
 ## How to reproduce it
 
-The `RaceConditionDemo` component simulates requests with different delays.
+The `RaceCondition` component simulates requests with different delays.
 
 1. Search for `react`.
 2. Quickly change the query to `typescript`.
