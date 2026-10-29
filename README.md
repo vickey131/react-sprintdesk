@@ -2,21 +2,24 @@
 
 SprintDesk is a small React task manager built with React and TypeScript.
 
-Tasks are saved in the browser's local storage and stay available after a reload.
+Tasks are loaded and managed through the `/api/tasks` endpoint. In development,
+the API is provided by MSW with an in-memory set of sample tasks.
 
 ## Features
 
 - Create tasks with a title, description, priority, and status
 - Mark tasks complete or move them back to to do, and delete tasks
 - Search tasks by title or description
-- Filter by status or priority, or hide completed tasks
+- Filter by status or priority with shareable URL search parameters, or hide completed tasks
 - Sort by priority or creation date (newest first)
 - See completed and per-status task counts
-- Keep tasks between visits with local storage
+- Cache task queries and refresh task data after updates
 
 ## Tech Stack
 
 - React
+- TanStack Query
+- MSW
 - TypeScript
 - Vite
 - Vitest
@@ -87,7 +90,6 @@ src/
 │           ├── useDebouncedValue.ts
 │           ├── useDebouncedValue.test.ts
 │           ├── useLocalStorage.ts
-│           ├── useLocalStorage.test.ts
 │           ├── useTaskFilters.ts
 │           └── useTaskFilters.test.ts
 ├── index.css
@@ -112,4 +114,5 @@ This project is a hands-on exercise in:
 - Immutable updates and derived state
 - Component keys and identity
 - Regression testing with Vitest and React Testing Library
+- Server-state caching, filtering, retries, and request cancellation
 - Git commits and version control

@@ -6,6 +6,7 @@ import { useTaskFilters } from "./useTaskFilters";
 afterEach(() => {
   cleanup();
   vi.useRealTimers();
+  window.history.replaceState({}, "", "/");
 });
 
 function createTasks(): Task[] {
@@ -84,7 +85,7 @@ describe("useTaskFilters", () => {
     expect(tasks.map((task) => task.id)).toEqual(originalTaskIds);
   });
 
-  it("searches task titles and descriptions without case sensitivity", () => {
+  it("debounces URL-backed search text without case sensitivity", () => {
     vi.useFakeTimers();
     const { result } = renderHook(() => useTaskFilters(createTasks()));
 
@@ -92,20 +93,17 @@ describe("useTaskFilters", () => {
       result.current.setSearchQuery("COMPLETED");
     });
 
-    expect(result.current.visibleTasks.map((task) => task.id)).toEqual([
-      "1",
-      "2",
-      "3",
-    ]);
+    expect(window.location.search).toBe("?search=COMPLETED");
+    expect(result.current.searchQuery).toBe("COMPLETED");
 
     act(() => {
       vi.advanceTimersByTime(300);
     });
 
-    expect(result.current.visibleTasks.map((task) => task.id)).toEqual(["2"]);
+    expect(result.current.debouncedSearchQuery).toBe("completed");
   });
 
-  it("filters by status and priority together", () => {
+  it("stores status and priority filters in the URL", () => {
     const { result } = renderHook(() => useTaskFilters(createTasks()));
 
     act(() => {
@@ -113,7 +111,29 @@ describe("useTaskFilters", () => {
       result.current.setPriorityFilter("low");
     });
 
-    expect(result.current.visibleTasks.map((task) => task.id)).toEqual(["1"]);
+    expect(window.location.search).toBe("?status=todo&priority=low");
+    expect(result.current.statusFilter).toBe("todo");
+    expect(result.current.priorityFilter).toBe("low");
+  });
+
+  it("updates filters when browser navigation changes the URL", () => {
+    const { result } = renderHook(() => useTaskFilters(createTasks()));
+
+    act(() => {
+      window.history.pushState({}, "", "/?status=done&priority=high");
+      window.dispatchEvent(new PopStateEvent("popstate"));
+    });
+
+    expect(result.current.statusFilter).toBe("done");
+    expect(result.current.priorityFilter).toBe("high");
+  });
+
+  it("ignores invalid URL filter values", () => {
+    window.history.replaceState({}, "", "/?status=unknown&priority=urgent");
+    const { result } = renderHook(() => useTaskFilters(createTasks()));
+
+    expect(result.current.statusFilter).toBe("all");
+    expect(result.current.priorityFilter).toBe("all");
   });
 
   it("sorts tasks by newest creation date without mutating the input", () => {
