@@ -114,11 +114,13 @@ describe("tasksReducer", () => {
   it("returns the existing state when an action targets a missing task", () => {
     const tasks = createTasks();
 
-    expect(tasksReducer(tasks, {
-      type: "update",
-      id: "missing",
-      updates: { title: "Not added" },
-    })).toBe(tasks);
+    expect(
+      tasksReducer(tasks, {
+        type: "update",
+        id: "missing",
+        updates: { title: "Not added" },
+      })
+    ).toBe(tasks);
     expect(tasksReducer(tasks, { type: "delete", id: "missing" })).toBe(tasks);
     expect(
       tasksReducer(tasks, {

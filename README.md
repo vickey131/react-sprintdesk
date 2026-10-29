@@ -10,7 +10,7 @@ the API is provided by MSW with an in-memory set of sample tasks.
 - Create tasks with a title, description, priority, and status
 - Mark tasks complete or move them back to to do, and delete tasks
 - Search tasks by title or description
-- Filter by status or priority, or hide completed tasks
+- Filter by status or priority with shareable URL search parameters, or hide completed tasks
 - Sort by priority or creation date (newest first)
 - See completed and per-status task counts
 - Cache task queries and refresh task data after updates
@@ -90,7 +90,6 @@ src/
 │           ├── useDebouncedValue.ts
 │           ├── useDebouncedValue.test.ts
 │           ├── useLocalStorage.ts
-│           ├── useLocalStorage.test.ts
 │           ├── useTaskFilters.ts
 │           └── useTaskFilters.test.ts
 ├── index.css

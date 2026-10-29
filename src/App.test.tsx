@@ -21,7 +21,7 @@ describe("App task workflow", () => {
       </QueryClientProvider>,
     );
 
-    await screen.findByText("Build task list");
+    await screen.findByText("Task1");
 
     fireEvent.change(screen.getByLabelText("Title"), {
       target: { value: "Plan sprint" },
@@ -56,7 +56,7 @@ describe("App task workflow", () => {
       </QueryClientProvider>,
     );
 
-    await screen.findByText("Build task list");
+    await screen.findByText("Task1");
     fireEvent.change(screen.getByLabelText("Title"), {
       target: { value: "Recover this task" },
     });

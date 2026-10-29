@@ -5,8 +5,8 @@ import type { Task, NewTaskInput } from "../../features/tasks/model";
 const seedTasks: Task[] = [
   {
     id: "task-1",
-    title: "Build task list",
-    description: "Display tasks in the list view",
+    title: "Task1",
+    description: "test",
     status: "todo",
     priority: "high",
     assigneeId: null,

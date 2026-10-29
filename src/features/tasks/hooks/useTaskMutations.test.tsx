@@ -13,7 +13,7 @@ afterEach(() => {
 
 const task: Task = {
   id: "task-1",
-  title: "Build task list",
+  title: "Task1",
   description: "",
   status: "todo",
   priority: "high",

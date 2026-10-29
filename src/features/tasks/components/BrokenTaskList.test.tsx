@@ -16,10 +16,11 @@ import { server } from "../../../shared/mocks/server";
 afterEach(() => {
   cleanup();
   vi.useRealTimers();
+  window.history.replaceState({}, "", "/");
 });
 
 beforeEach(() => {
-  window.localStorage.clear();
+  window.history.replaceState({}, "", "/");
 });
 
 function createTasks(): Task[] {
@@ -107,6 +108,7 @@ describe("BrokenTaskList", () => {
       target: { value: "second" },
     });
 
+    expect(window.location.search).toBe("?search=second");
     expect(screen.getByText("First task")).toBeTruthy();
     await vi.advanceTimersByTimeAsync(300);
     vi.useRealTimers();
@@ -128,10 +130,30 @@ describe("BrokenTaskList", () => {
       target: { value: "low" },
     });
 
+    expect(window.location.search).toBe("?status=done&priority=low");
     await waitFor(() => {
       expect(screen.getByText("First task")).toBeTruthy();
       expect(screen.queryByText("Second task")).toBeNull();
     });
+  });
+
+  it("loads the selected filters from URL search parameters", async () => {
+    window.history.replaceState({}, "", "/?status=done&priority=low");
+    const initialTasks = createTasks().map((task) =>
+      task.id === "1" ? { ...task, status: "done" as const } : task
+    );
+    await renderTaskList(initialTasks);
+
+    expect(screen.getByLabelText("Filter by status")).toHaveProperty(
+      "value",
+      "done",
+    );
+    expect(screen.getByLabelText("Filter by priority")).toHaveProperty(
+      "value",
+      "low",
+    );
+    expect(screen.getByText("First task")).toBeTruthy();
+    expect(screen.queryByText("Second task")).toBeNull();
   });
 
   it("counts every task by status regardless of active filters", async () => {
