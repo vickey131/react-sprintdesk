@@ -10,11 +10,17 @@ interface TaskFormProps {
   task?: Task;
   onSubmit: (values: TaskFormValues) => void;
   onCancel?: () => void;
+  isSubmitting?: boolean;
 }
 
 const TITLE_ERROR = "Title must be between 3 and 100 characters.";
 
-export function TaskForm({ task, onSubmit, onCancel }: TaskFormProps) {
+export function TaskForm({
+  task,
+  onSubmit,
+  onCancel,
+  isSubmitting = false,
+}: TaskFormProps) {
   const [title, setTitle] = useState(task?.title ?? "");
   const [description, setDescription] = useState(task?.description ?? "");
   const [priority, setPriority] = useState<Priority>(
@@ -26,6 +32,9 @@ export function TaskForm({ task, onSubmit, onCancel }: TaskFormProps) {
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (isSubmitting) {
+      return;
+    }
 
     const trimmedTitle = title.trim();
     if (trimmedTitle.length < 3 || trimmedTitle.length > 100) {
@@ -112,7 +121,13 @@ export function TaskForm({ task, onSubmit, onCancel }: TaskFormProps) {
         </select>
       </div>
 
-      <button type="submit">{isEditing ? "Save changes" : "Create task"}</button>
+      <button type="submit" disabled={isSubmitting}>
+        {isSubmitting
+          ? "Saving..."
+          : isEditing
+            ? "Save changes"
+            : "Create task"}
+      </button>
       {onCancel && (
         <button type="button" onClick={onCancel}>
           Cancel

@@ -73,6 +73,18 @@ describe("TaskForm", () => {
     );
   });
 
+  it("disables and guards submission while a request is pending", () => {
+    const onSubmit = vi.fn();
+    render(<TaskForm onSubmit={onSubmit} isSubmitting />);
+
+    expect(
+      screen.getByRole("button", { name: "Saving..." }).hasAttribute("disabled"),
+    ).toBe(true);
+    fireEvent.submit(screen.getByRole("form", { name: "Create task" }));
+
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
   it("prevents titles longer than 100 characters", () => {
     const onSubmit = vi.fn();
     render(<TaskForm onSubmit={onSubmit} />);
