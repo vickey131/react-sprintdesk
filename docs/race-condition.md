@@ -1,7 +1,7 @@
 
 # Race Conditions in Async UI
 
-## What is a race condition?
+## Race condition
 
 A race condition occurs when the result of an operation depends on the order in which asynchronous operations finish.
 
