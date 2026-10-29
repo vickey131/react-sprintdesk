@@ -17,16 +17,35 @@ export function useTaskMutations() {
 
   const createTaskMutation = useMutation({
     mutationFn: createTask,
-    onSuccess: invalidateTasks,
+    onSettled: invalidateTasks,
   });
   const updateTaskMutation = useMutation({
     mutationFn: ({ id, status }: { id: Task["id"]; status: Task["status"] }) =>
       updateTask(id, { status }),
-    onSuccess: invalidateTasks,
+    onMutate: async ({ id, status }) => {
+      await queryClient.cancelQueries({ queryKey: taskQueryKeys.all });
+      const previousTasks = queryClient.getQueriesData<Task[]>({
+        queryKey: taskQueryKeys.all,
+      });
+
+      queryClient.setQueriesData<Task[]>(
+        { queryKey: taskQueryKeys.all },
+        (tasks) =>
+          tasks?.map((task) => (task.id === id ? { ...task, status } : task)),
+      );
+
+      return { previousTasks };
+    },
+    onError: (_error, _variables, context) => {
+      context?.previousTasks.forEach(([queryKey, tasks]) => {
+        queryClient.setQueryData(queryKey, tasks);
+      });
+    },
+    onSettled: invalidateTasks,
   });
   const deleteTaskMutation = useMutation({
     mutationFn: deleteTask,
-    onSuccess: invalidateTasks,
+    onSettled: invalidateTasks,
   });
 
   return {
