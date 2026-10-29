@@ -15,7 +15,7 @@ The `RaceCondition` component simulates requests with different delays.
 2. Quickly change the query to `typescript`.
 3. Observe that `typescript` may appear first, followed by the older `react` result.
 
-This happens because the older request can finish after the newer request.
+This happens because the older request can finish after the newer request
 
 ## Why it happens
 
