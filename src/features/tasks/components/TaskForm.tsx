@@ -1,10 +1,12 @@
-import { useState, type FormEvent } from "react";
-import type { Priority, Task, TaskStatus } from "../model";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import {
+  TaskFormSchema,
+  type Task,
+  type TaskFormValues,
+} from "../model";
 
-export type TaskFormValues = Pick<
-  Task,
-  "title" | "description" | "priority" | "status"
->;
+export type { TaskFormValues } from "../model";
 
 interface TaskFormProps {
   task?: Task;
@@ -13,72 +15,65 @@ interface TaskFormProps {
   isSubmitting?: boolean;
 }
 
-const TITLE_ERROR = "Title must be between 3 and 100 characters.";
-
 export function TaskForm({
   task,
   onSubmit,
   onCancel,
   isSubmitting = false,
 }: TaskFormProps) {
-  const [title, setTitle] = useState(task?.title ?? "");
-  const [description, setDescription] = useState(task?.description ?? "");
-  const [priority, setPriority] = useState<Priority>(
-    task?.priority ?? "medium"
-  );
-  const [status, setStatus] = useState<TaskStatus>(task?.status ?? "todo");
-  const [titleError, setTitleError] = useState("");
   const isEditing = task !== undefined;
-
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (isSubmitting) {
-      return;
-    }
-
-    const trimmedTitle = title.trim();
-    if (trimmedTitle.length < 3 || trimmedTitle.length > 100) {
-      setTitleError(TITLE_ERROR);
-      return;
-    }
-
-    setTitleError("");
-    onSubmit({
-      title: trimmedTitle,
-      description,
-      priority,
-      status,
-    });
-  }
-
-  function handleTitleChange(value: string) {
-    const nextTitle = value.slice(0, 100);
-    setTitle(nextTitle);
-
-    if (titleError && nextTitle.trim().length >= 3) {
-      setTitleError("");
-    }
-  }
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    formState: { errors },
+  } = useForm<TaskFormValues>({
+    resolver: zodResolver(TaskFormSchema),
+    defaultValues: {
+      title: task?.title ?? "",
+      description: task?.description ?? "",
+      priority: task?.priority ?? "medium",
+      status: task?.status ?? "todo",
+    },
+  });
+  const titleField = register("title");
 
   return (
     <form
       aria-label={isEditing ? "Edit task" : "Create task"}
-      onSubmit={handleSubmit}
+      onSubmit={handleSubmit((values) => {
+        if (!isSubmitting) {
+          onSubmit(values);
+        }
+      })}
       noValidate
     >
       <div>
         <label htmlFor="task-title">Title</label>
         <input
+          {...titleField}
           id="task-title"
-          name="title"
           type="text"
-          value={title}
-          onChange={(event) => handleTitleChange(event.target.value)}
+          onChange={(event) => {
+            if (event.currentTarget.value.length > 100) {
+              event.currentTarget.value = event.currentTarget.value.slice(
+                0,
+                100,
+              );
+              setValue("title", event.currentTarget.value, {
+                shouldValidate: true,
+              });
+            } else {
+              titleField.onChange(event);
+            }
+          }}
           maxLength={100}
+          aria-invalid={Boolean(errors.title)}
+          aria-describedby={errors.title ? "task-title-error" : undefined}
         />
-        {titleError && (
+        {errors.title?.message && (
           <p id="task-title-error" role="alert">
-            {titleError}
+            {errors.title.message}
           </p>
         )}
       </div>
@@ -86,39 +81,56 @@ export function TaskForm({
       <div>
         <label htmlFor="task-description">Description</label>
         <textarea
+          {...register("description")}
           id="task-description"
-          name="description"
-          value={description}
-          onChange={(event) => setDescription(event.target.value)}
+          aria-invalid={Boolean(errors.description)}
+          aria-describedby={
+            errors.description ? "task-description-error" : undefined
+          }
         />
+        {errors.description?.message && (
+          <p id="task-description-error" role="alert">
+            {errors.description.message}
+          </p>
+        )}
       </div>
 
       <div>
         <label htmlFor="task-priority">Priority</label>
         <select
+          {...register("priority")}
           id="task-priority"
-          name="priority"
-          value={priority}
-          onChange={(event) => setPriority(event.target.value as Priority)}
+          aria-invalid={Boolean(errors.priority)}
+          aria-describedby={errors.priority ? "task-priority-error" : undefined}
         >
           <option value="low">Low</option>
           <option value="medium">Medium</option>
           <option value="high">High</option>
         </select>
+        {errors.priority?.message && (
+          <p id="task-priority-error" role="alert">
+            {errors.priority.message}
+          </p>
+        )}
       </div>
 
       <div>
         <label htmlFor="task-status">Status</label>
         <select
+          {...register("status")}
           id="task-status"
-          name="status"
-          value={status}
-          onChange={(event) => setStatus(event.target.value as TaskStatus)}
+          aria-invalid={Boolean(errors.status)}
+          aria-describedby={errors.status ? "task-status-error" : undefined}
         >
           <option value="todo">To do</option>
           <option value="in_progress">In progress</option>
           <option value="done">Done</option>
         </select>
+        {errors.status?.message && (
+          <p id="task-status-error" role="alert">
+            {errors.status.message}
+          </p>
+        )}
       </div>
 
       <button type="submit" disabled={isSubmitting}>

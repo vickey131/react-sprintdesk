@@ -9,7 +9,7 @@ it("returns parsed JSON for a successful response", async () => {
   const data = { id: 1 };
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json(data)));
 
-  await expect(request<typeof data>("/api/tasks")).resolves.toEqual(data);
+  await expect(request("/api/tasks")).resolves.toEqual(data);
 });
 
 it("throws ApiError with the API message and status for HTTP errors", async () => {
@@ -35,7 +35,7 @@ it("resolves undefined for a 204 response without parsing JSON", async () => {
     vi.fn().mockResolvedValue(new Response(null, { status: 204 })),
   );
 
-  await expect(request<void>("/api/tasks")).resolves.toBeUndefined();
+  await expect(request("/api/tasks")).resolves.toBeUndefined();
 });
 
 it("throws ApiError with a readable fallback for an empty 500 response", async () => {

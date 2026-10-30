@@ -35,10 +35,10 @@ function getErrorMessage(body: string, statusText: string, status: number) {
   return statusText || `Request failed with status ${status}`;
 }
 
-export async function request<T>(
+export async function request(
   input: RequestInfo | URL,
   init?: RequestInit,
-): Promise<T> {
+): Promise<unknown> {
   const response = await fetch(input, init);
 
   if (!response.ok) {
@@ -50,8 +50,8 @@ export async function request<T>(
   }
 
   if (response.status === 204) {
-    return undefined as T;
+    return undefined;
   }
 
-  return response.json() as Promise<T>;
+  return response.json() as Promise<unknown>;
 }
