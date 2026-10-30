@@ -29,7 +29,9 @@ export class RouteErrorBoundary extends Component<
       return (
         <main>
           <h1>SprintDesk</h1>
-          <p role="alert">Something went wrong: {this.state.error.message}</p>
+          <p role="alert" aria-live="assertive">
+            Something went wrong: {this.state.error.message}
+          </p>
           <button type="button" onClick={() => this.setState({ error: null })}>
             Try again
           </button>
@@ -60,7 +62,9 @@ function TaskManager() {
       />
       {createTaskMutation.isError && (
         <>
-          <p role="alert">{createTaskMutation.error.message}</p>
+          <p role="alert" aria-live="assertive">
+            {createTaskMutation.error.message}
+          </p>
           {createTaskMutation.variables && (
             <button
               type="button"

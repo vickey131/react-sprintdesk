@@ -10,6 +10,7 @@ import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { http, HttpResponse } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { axe } from "vitest-axe";
 import type { Task } from "../model";
 import { BrokenTaskList } from "./BrokenTaskList";
 import { resetTasks } from "../../../shared/mocks/handlers";
@@ -55,15 +56,48 @@ async function renderTaskList(initialTasks = createTasks()) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  render(
+  const rendered = render(
     <QueryClientProvider client={queryClient}>
       <BrokenTaskList />
     </QueryClientProvider>,
   );
   await screen.findByText(initialTasks.length ? initialTasks[0].title : "No tasks yet.");
+  return rendered;
 }
 
 describe("BrokenTaskList", () => {
+  it("has no accessibility violations in the task list", async () => {
+    const { container } = await renderTaskList();
+
+    expect((await axe(container)).violations).toHaveLength(0);
+  });
+
+  it("supports keyboard interaction with filters and sorting", async () => {
+    await renderTaskList();
+    const user = userEvent.setup();
+
+    await user.tab();
+    expect(document.activeElement).toBe(
+      screen.getByRole("checkbox", { name: "Show completed" }),
+    );
+    await user.keyboard(" ");
+
+    for (let index = 0; index < 4; index += 1) {
+      await user.tab();
+    }
+
+    const prioritySort = screen.getByRole("button", { name: "Sort by priority" });
+    expect(document.activeElement).toBe(prioritySort);
+    await user.keyboard("{Enter}");
+    expect(
+      screen
+        .getByRole("button", { name: "Clear priority sort" })
+        .getAttribute("aria-pressed"),
+    ).toBe(
+      "true",
+    );
+  });
+
   it("completes and deletes tasks through the API", async () => {
     await renderTaskList();
 

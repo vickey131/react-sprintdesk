@@ -72,7 +72,7 @@ export function TaskForm({
           aria-describedby={errors.title ? "task-title-error" : undefined}
         />
         {errors.title?.message && (
-          <p id="task-title-error" role="alert">
+          <p id="task-title-error" role="alert" aria-live="assertive">
             {errors.title.message}
           </p>
         )}
@@ -89,7 +89,7 @@ export function TaskForm({
           }
         />
         {errors.description?.message && (
-          <p id="task-description-error" role="alert">
+          <p id="task-description-error" role="alert" aria-live="assertive">
             {errors.description.message}
           </p>
         )}
@@ -108,7 +108,7 @@ export function TaskForm({
           <option value="high">High</option>
         </select>
         {errors.priority?.message && (
-          <p id="task-priority-error" role="alert">
+          <p id="task-priority-error" role="alert" aria-live="assertive">
             {errors.priority.message}
           </p>
         )}
@@ -127,7 +127,7 @@ export function TaskForm({
           <option value="done">Done</option>
         </select>
         {errors.status?.message && (
-          <p id="task-status-error" role="alert">
+          <p id="task-status-error" role="alert" aria-live="assertive">
             {errors.status.message}
           </p>
         )}

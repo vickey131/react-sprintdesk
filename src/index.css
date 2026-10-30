@@ -66,6 +66,17 @@ body {
   margin: 0;
 }
 
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
 h1,
 h2 {
   font-family: var(--heading);
