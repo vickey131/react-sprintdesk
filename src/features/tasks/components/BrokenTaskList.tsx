@@ -1,9 +1,12 @@
 
+import { useState } from "react";
 import { useTaskMutations } from "../hooks/useTaskMutations";
 import { useTaskFilters } from "../hooks/useTaskFilters";
 import { useTasksQuery } from "../hooks/useTasksQuery";
+import { sampleTasks } from "../sampleTasks";
 
 export function BrokenTaskList() {
+  const [showSampleTasks, setShowSampleTasks] = useState(false);
   const {
     getVisibleTasks,
     showCompleted,
@@ -26,8 +29,22 @@ export function BrokenTaskList() {
     status: statusFilter === "all" ? undefined : statusFilter,
     priority: priorityFilter === "all" ? undefined : priorityFilter,
   });
-  const tasks = tasksQuery.data ?? [];
-  const allTasks = allTasksQuery.data ?? [];
+  const allTasks = showSampleTasks
+    ? sampleTasks
+    : allTasksQuery.data ?? [];
+  const tasks = showSampleTasks
+    ? sampleTasks.filter((task) => {
+        const matchesSearch =
+          !debouncedSearchQuery ||
+          task.title.toLocaleLowerCase().includes(debouncedSearchQuery) ||
+          task.description.toLocaleLowerCase().includes(debouncedSearchQuery);
+        return (
+          matchesSearch &&
+          (statusFilter === "all" || task.status === statusFilter) &&
+          (priorityFilter === "all" || task.priority === priorityFilter)
+        );
+      })
+    : tasksQuery.data ?? [];
   const visibleTasks = getVisibleTasks(tasks);
   const {
     updateTaskMutation,
@@ -66,6 +83,16 @@ export function BrokenTaskList() {
             onChange={(event) => setShowCompleted(event.target.checked)}
           />
           Show completed
+        </label>
+
+        <label htmlFor="show-500-tasks">
+          <input
+            id="show-500-tasks"
+            type="checkbox"
+            checked={showSampleTasks}
+            onChange={(event) => setShowSampleTasks(event.target.checked)}
+          />
+          Show 500 tasks
         </label>
 
         <label htmlFor="task-search">Search tasks</label>
@@ -125,9 +152,9 @@ export function BrokenTaskList() {
       </fieldset>
 
       <ul>
-        {tasksQuery.isPending ? (
+        {!showSampleTasks && tasksQuery.isPending ? (
           <li role="status">Loading tasks...</li>
-        ) : tasksQuery.isError ? (
+        ) : !showSampleTasks && tasksQuery.isError ? (
           <li>
             <p role="alert" aria-live="assertive">
               Unable to load tasks: {tasksQuery.error.message}
@@ -147,6 +174,7 @@ export function BrokenTaskList() {
                 type="checkbox"
                 aria-label={`Complete ${task.title}`}
                 checked={task.status === "done"}
+                disabled={showSampleTasks}
                 onChange={() =>
                   updateTaskMutation.mutate({
                     id: task.id,
@@ -159,12 +187,14 @@ export function BrokenTaskList() {
               <small>({task.priority})</small>
               <small> - {task.status.replace("_", " ")}</small>
 
-              <button
-                type="button"
-                onClick={() => deleteTaskMutation.mutate(task.id)}
-              >
-                Delete
-              </button>
+              {!showSampleTasks && (
+                <button
+                  type="button"
+                  onClick={() => deleteTaskMutation.mutate(task.id)}
+                >
+                  Delete
+                </button>
+              )}
             </li>
           ))
         )}
