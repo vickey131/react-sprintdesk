@@ -1,9 +1,10 @@
 
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useTaskMutations } from "../hooks/useTaskMutations";
 import { useTaskFilters } from "../hooks/useTaskFilters";
 import { useTasksQuery } from "../hooks/useTasksQuery";
 import { sampleTasks } from "../sampleTasks";
+import { TaskItem } from "./TaskItem";
 
 export function BrokenTaskList() {
   const [showSampleTasks, setShowSampleTasks] = useState(false);
@@ -29,36 +30,69 @@ export function BrokenTaskList() {
     status: statusFilter === "all" ? undefined : statusFilter,
     priority: priorityFilter === "all" ? undefined : priorityFilter,
   });
-  const allTasks = showSampleTasks
-    ? sampleTasks
-    : allTasksQuery.data ?? [];
-  const tasks = showSampleTasks
-    ? sampleTasks.filter((task) => {
-        const matchesSearch =
-          !debouncedSearchQuery ||
-          task.title.toLocaleLowerCase().includes(debouncedSearchQuery) ||
-          task.description.toLocaleLowerCase().includes(debouncedSearchQuery);
-        return (
-          matchesSearch &&
-          (statusFilter === "all" || task.status === statusFilter) &&
-          (priorityFilter === "all" || task.priority === priorityFilter)
-        );
-      })
-    : tasksQuery.data ?? [];
-  const visibleTasks = getVisibleTasks(tasks);
+  const allTasks = useMemo(
+    () => (showSampleTasks ? sampleTasks : allTasksQuery.data ?? []),
+    [showSampleTasks, allTasksQuery.data],
+  );
+  const tasks = useMemo(
+    () =>
+      showSampleTasks
+        ? sampleTasks.filter((task) => {
+            const matchesSearch =
+              !debouncedSearchQuery ||
+              task.title.toLocaleLowerCase().includes(debouncedSearchQuery) ||
+              task.description
+                .toLocaleLowerCase()
+                .includes(debouncedSearchQuery);
+            return (
+              matchesSearch &&
+              (statusFilter === "all" || task.status === statusFilter) &&
+              (priorityFilter === "all" || task.priority === priorityFilter)
+            );
+          })
+        : tasksQuery.data ?? [],
+    [showSampleTasks, debouncedSearchQuery, statusFilter, priorityFilter, tasksQuery.data],
+  );
+  // getVisibleTasks's result depends only on `tasks` plus these three flags,
+  // not on its own (unstable) identity, which changes every render.
+  const visibleTasks = useMemo(
+    () => getVisibleTasks(tasks),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [tasks, showCompleted, sortByDate, sortByPriority],
+  );
   const {
     updateTaskMutation,
     deleteTaskMutation,
   } = useTaskMutations();
 
-  const completedCount = allTasks.filter(
-    (task) => task.status === "done",
-  ).length;
-  const statusCounts = {
-    todo: allTasks.filter((task) => task.status === "todo").length,
-    inProgress: allTasks.filter((task) => task.status === "in_progress").length,
-    done: completedCount,
-  };
+  // `.mutate` is the stable reference we actually need; the enclosing
+  // mutation object is recreated every render and would defeat memoization.
+  const handleToggleTask = useCallback(
+    (id: string, nextStatus: "todo" | "in_progress" | "done") =>
+      updateTaskMutation.mutate({ id, status: nextStatus }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [updateTaskMutation.mutate],
+  );
+  const handleDeleteTask = useCallback(
+    (id: string) => deleteTaskMutation.mutate(id),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [deleteTaskMutation.mutate],
+  );
+
+  const statusCounts = useMemo(
+    () =>
+      allTasks.reduce(
+        (counts, task) => {
+          if (task.status === "todo") counts.todo += 1;
+          else if (task.status === "in_progress") counts.inProgress += 1;
+          else counts.done += 1;
+          return counts;
+        },
+        { todo: 0, inProgress: 0, done: 0 },
+      ),
+    [allTasks],
+  );
+  const completedCount = statusCounts.done;
 
   return (
     <section aria-labelledby="tasks-heading">
@@ -169,33 +203,13 @@ export function BrokenTaskList() {
           <li>No tasks match your filters.</li>
         ) : (
           visibleTasks.map((task) => (
-            <li key={task.id}>
-              <input
-                type="checkbox"
-                aria-label={`Complete ${task.title}`}
-                checked={task.status === "done"}
-                disabled={showSampleTasks}
-                onChange={() =>
-                  updateTaskMutation.mutate({
-                    id: task.id,
-                    status: task.status === "done" ? "todo" : "done",
-                  })
-                }
-              />
-
-              <span>{task.title}</span>{" "}
-              <small>({task.priority})</small>
-              <small> - {task.status.replace("_", " ")}</small>
-
-              {!showSampleTasks && (
-                <button
-                  type="button"
-                  onClick={() => deleteTaskMutation.mutate(task.id)}
-                >
-                  Delete
-                </button>
-              )}
-            </li>
+            <TaskItem
+              key={task.id}
+              task={task}
+              disabled={showSampleTasks}
+              onToggle={handleToggleTask}
+              onDelete={handleDeleteTask}
+            />
           ))
         )}
       </ul>
