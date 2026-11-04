@@ -5,6 +5,21 @@ import { request } from "./http";
 
 type CreateTaskInput = Omit<Task, "id" | "createdAt" | "updatedAt">;
 
+const TasksResponseSchema = z.array(TaskSchema).superRefine((tasks, context) => {
+  const ids = new Set<string>();
+
+  tasks.forEach((task, index) => {
+    if (ids.has(task.id)) {
+      context.addIssue({
+        code: "custom",
+        message: "Task IDs must be unique.",
+        path: [index, "id"],
+      });
+    }
+    ids.add(task.id);
+  });
+});
+
 function parseResponse<T>(schema: z.ZodType<T>, response: unknown): T {
   const result = schema.safeParse(response);
   if (!result.success) {
@@ -28,7 +43,7 @@ export function getTasks(filters: TaskFilters, signal: AbortSignal) {
 
   const query = searchParams.size > 0 ? `?${searchParams.toString()}` : "";
   return request(`/api/tasks${query}`, { signal }).then((response) =>
-    parseResponse(z.array(TaskSchema), response),
+    parseResponse(TasksResponseSchema, response),
   );
 }
 
