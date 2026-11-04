@@ -1,11 +1,32 @@
-import type { Task } from "../../features/tasks/model";
+import { z } from "zod";
+import { TaskSchema, type Task } from "../../features/tasks/model";
 import type { TaskFilters } from "./taskQueryKeys";
 import { request } from "./http";
 
-type CreateTaskInput = Pick<
-  Task,
-  "title" | "description" | "status" | "priority" | "assigneeId"
->;
+type CreateTaskInput = Omit<Task, "id" | "createdAt" | "updatedAt">;
+
+const TasksResponseSchema = z.array(TaskSchema).superRefine((tasks, context) => {
+  const ids = new Set<string>();
+
+  tasks.forEach((task, index) => {
+    if (ids.has(task.id)) {
+      context.addIssue({
+        code: "custom",
+        message: "Task IDs must be unique.",
+        path: [index, "id"],
+      });
+    }
+    ids.add(task.id);
+  });
+});
+
+function parseResponse<T>(schema: z.ZodType<T>, response: unknown): T {
+  const result = schema.safeParse(response);
+  if (!result.success) {
+    throw result.error;
+  }
+  return result.data;
+}
 
 export function getTasks(filters: TaskFilters, signal: AbortSignal) {
   const searchParams = new URLSearchParams();
@@ -21,30 +42,32 @@ export function getTasks(filters: TaskFilters, signal: AbortSignal) {
   }
 
   const query = searchParams.size > 0 ? `?${searchParams.toString()}` : "";
-  return request<Task[]>(`/api/tasks${query}`, { signal });
+  return request(`/api/tasks${query}`, { signal }).then((response) =>
+    parseResponse(TasksResponseSchema, response),
+  );
 }
 
 export function createTask(input: CreateTaskInput) {
-  return request<Task>("/api/tasks", {
+  return request("/api/tasks", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
-  });
+  }).then((response) => parseResponse(TaskSchema, response));
 }
 
 export function updateTask(
   id: Task["id"],
   updates: Partial<Pick<Task, "status">>,
 ) {
-  return request<Task>(`/api/tasks/${encodeURIComponent(id)}`, {
+  return request(`/api/tasks/${encodeURIComponent(id)}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(updates),
-  });
+  }).then((response) => parseResponse(TaskSchema, response));
 }
 
 export function deleteTask(id: Task["id"]) {
-  return request<void>(`/api/tasks/${encodeURIComponent(id)}`, {
+  return request(`/api/tasks/${encodeURIComponent(id)}`, {
     method: "DELETE",
-  });
+  }).then((response) => parseResponse(z.undefined(), response));
 }

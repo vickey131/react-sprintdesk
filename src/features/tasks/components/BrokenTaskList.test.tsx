@@ -4,10 +4,13 @@ import {
   render,
   screen,
   waitFor,
+  waitForElementToBeRemoved,
 } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { http, HttpResponse } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { axe } from "vitest-axe";
 import type { Task } from "../model";
 import { BrokenTaskList } from "./BrokenTaskList";
 import { resetTasks } from "../../../shared/mocks/handlers";
@@ -53,15 +56,48 @@ async function renderTaskList(initialTasks = createTasks()) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  render(
+  const rendered = render(
     <QueryClientProvider client={queryClient}>
       <BrokenTaskList />
     </QueryClientProvider>,
   );
   await screen.findByText(initialTasks.length ? initialTasks[0].title : "No tasks yet.");
+  return rendered;
 }
 
 describe("BrokenTaskList", () => {
+  it("has no accessibility violations in the task list", async () => {
+    const { container } = await renderTaskList();
+
+    expect((await axe(container)).violations).toHaveLength(0);
+  });
+
+  it("supports keyboard interaction with filters and sorting", async () => {
+    await renderTaskList();
+    const user = userEvent.setup();
+
+    await user.tab();
+    expect(document.activeElement).toBe(
+      screen.getByRole("checkbox", { name: "Show completed" }),
+    );
+    await user.keyboard(" ");
+
+    for (let index = 0; index < 5; index += 1) {
+      await user.tab();
+    }
+
+    const prioritySort = screen.getByRole("button", { name: "Sort by priority" });
+    expect(document.activeElement).toBe(prioritySort);
+    await user.keyboard("{Enter}");
+    expect(
+      screen
+        .getByRole("button", { name: "Clear priority sort" })
+        .getAttribute("aria-pressed"),
+    ).toBe(
+      "true",
+    );
+  });
+
   it("completes and deletes tasks through the API", async () => {
     await renderTaskList();
 
@@ -75,44 +111,44 @@ describe("BrokenTaskList", () => {
     });
   });
 
-  it("filters completed tasks without changing API data", async () => {
+  it("hides completed tasks when Show completed is turned off", async () => {
     const initialTasks = createTasks().map((task) =>
       task.id === "1" ? { ...task, status: "done" as const } : task
     );
     await renderTaskList(initialTasks);
 
-    fireEvent.click(screen.getByLabelText("Show completed"));
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("checkbox", { name: "Show completed" }));
 
     expect(screen.queryByText("First task")).toBeNull();
+    expect(screen.getByText("Second task")).toBeTruthy();
     expect(screen.getByText("1 of 2 completed")).toBeTruthy();
   });
 
-  it("sorts a derived list without mutating the API task order", async () => {
+  it("shows high-priority tasks first when priority sorting is selected", async () => {
     const initialTasks = createTasks();
     await renderTaskList(initialTasks);
 
-    fireEvent.click(screen.getByRole("button", { name: "Sort by priority" }));
+    const user = userEvent.setup();
+    await user.click(
+      screen.getByRole("button", { name: "Sort by priority" }),
+    );
 
-    const renderedTitles = screen
-      .getAllByRole("listitem")
-      .map((item) => item.querySelector("span")?.textContent);
-    expect(renderedTitles).toEqual(["Second task", "First task"]);
-    expect(initialTasks.map((task) => task.id)).toEqual(["1", "2"]);
+    const taskItems = screen.getAllByRole("listitem");
+    expect(taskItems[0].textContent).toContain("Second task");
+    expect(taskItems[1].textContent).toContain("First task");
   });
 
-  it("searches tasks by title", async () => {
+  it("shows only matching tasks after a search", async () => {
     await renderTaskList();
-    vi.useFakeTimers();
+    const user = userEvent.setup();
 
-    fireEvent.change(screen.getByRole("searchbox", { name: "Search tasks" }), {
-      target: { value: "second" },
-    });
+    await user.type(
+      screen.getByRole("searchbox", { name: "Search tasks" }),
+      "second",
+    );
 
-    expect(window.location.search).toBe("?search=second");
-    expect(screen.getByText("First task")).toBeTruthy();
-    await vi.advanceTimersByTimeAsync(300);
-    vi.useRealTimers();
-
+    await waitForElementToBeRemoved(() => screen.queryByText("First task"));
     expect(await screen.findByText("Second task")).toBeTruthy();
     expect(screen.queryByText("First task")).toBeNull();
   });

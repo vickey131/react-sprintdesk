@@ -1,6 +1,16 @@
 import { describe, expect, it } from "vitest";
 import type { Task } from "./model";
-import { tasksReducer } from "./tasksReducer";
+import { tasksReducer, type TasksAction } from "./tasksReducer";
+
+const handledActionTypes = {
+  add: true,
+  update: true,
+  delete: true,
+  "move-status": true,
+  toggle: true,
+} satisfies Record<TasksAction["type"], true>;
+
+void handledActionTypes;
 
 function createTasks(): Task[] {
   return [

@@ -1,4 +1,11 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
+import { axe } from "vitest-axe";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Task } from "../model";
 import { TaskForm, type TaskFormValues } from "./TaskForm";
@@ -32,7 +39,13 @@ describe("TaskForm", () => {
     ).toBeTruthy();
   });
 
-  it("submits trimmed title, description, priority, and status in create mode", () => {
+  it("has no accessibility violations in create mode", async () => {
+    const { container } = render(<TaskForm onSubmit={vi.fn()} />);
+
+    expect((await axe(container)).violations).toHaveLength(0);
+  });
+
+  it("submits trimmed title, description, priority, and status in create mode", async () => {
     const onSubmit = vi.fn<(values: TaskFormValues) => void>();
     render(<TaskForm onSubmit={onSubmit} />);
 
@@ -50,17 +63,19 @@ describe("TaskForm", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Create task" }));
 
-    expect(onSubmit).toHaveBeenCalledWith({
-      title: "Write tests",
-      description: "Add form coverage",
-      priority: "high",
-      status: "in_progress",
-    });
+    await waitFor(() =>
+      expect(onSubmit).toHaveBeenCalledWith({
+        title: "Write tests",
+        description: "Add form coverage",
+        priority: "high",
+        status: "in_progress",
+      }, expect.any(Function)),
+    );
   });
 
-  it("rejects a title shorter than 3 trimmed characters", () => {
+  it("rejects a title shorter than 3 trimmed characters", async () => {
     const onSubmit = vi.fn();
-    render(<TaskForm onSubmit={onSubmit} />);
+    const { container } = render(<TaskForm onSubmit={onSubmit} />);
 
     fireEvent.change(screen.getByLabelText("Title"), {
       target: { value: "  a  " },
@@ -68,9 +83,16 @@ describe("TaskForm", () => {
     fireEvent.click(screen.getByRole("button", { name: "Create task" }));
 
     expect(onSubmit).not.toHaveBeenCalled();
-    expect(screen.getByRole("alert").textContent).toBe(
-      "Title must be between 3 and 100 characters."
-    );
+    await waitFor(() => {
+      expect(screen.getByRole("alert").textContent).toBe(
+        "Title must be between 3 and 100 characters.",
+      );
+      expect(screen.getByLabelText("Title").getAttribute("aria-describedby")).toBe(
+        "task-title-error",
+      );
+      expect(document.activeElement).toBe(screen.getByLabelText("Title"));
+    });
+    expect((await axe(container)).violations).toHaveLength(0);
   });
 
   it("disables and guards submission while a request is pending", () => {
@@ -98,7 +120,7 @@ describe("TaskForm", () => {
     );
   });
 
-  it("accepts a title of exactly 100 characters", () => {
+  it("accepts a title of exactly 100 characters", async () => {
     const onSubmit = vi.fn<(values: TaskFormValues) => void>();
     render(<TaskForm onSubmit={onSubmit} />);
 
@@ -107,12 +129,15 @@ describe("TaskForm", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Create task" }));
 
-    expect(onSubmit).toHaveBeenCalledWith(
-      expect.objectContaining({ title: "a".repeat(100) })
+    await waitFor(() =>
+      expect(onSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({ title: "a".repeat(100) }),
+        expect.any(Function),
+      ),
     );
   });
 
-  it("renders existing values and submits changes in edit mode", () => {
+  it("renders existing values and submits changes in edit mode", async () => {
     const onSubmit = vi.fn<(values: TaskFormValues) => void>();
     const task = createTask();
     render(<TaskForm task={task} onSubmit={onSubmit} />);
@@ -140,11 +165,13 @@ describe("TaskForm", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
 
-    expect(onSubmit).toHaveBeenCalledWith({
-      title: "Updated task",
-      description: "Task details",
-      priority: "high",
-      status: "done",
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledWith({
+        title: "Updated task",
+        description: "Task details",
+        priority: "high",
+        status: "done",
+      }, expect.any(Function));
     });
   });
 

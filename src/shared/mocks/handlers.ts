@@ -1,6 +1,10 @@
 
 import { http, HttpResponse } from "msw";
-import type { Task, NewTaskInput } from "../../features/tasks/model";
+import {
+  TaskFormSchema,
+  type Task,
+  type TaskFormValues,
+} from "../../features/tasks/model";
 
 const seedTasks: Task[] = [
   {
@@ -75,15 +79,45 @@ export const handlers = [
 
   // POST /api/tasks
   http.post("*/api/tasks", async ({ request }) => {
-    const input = (await request.json()) as NewTaskInput & {
-      status?: Task["status"];
-    };
+    const input: unknown = await request.json();
+    const result = TaskFormSchema.safeParse(input);
+
+    if (!result.success) {
+      const errors: Record<string, string> = {};
+      for (const issue of result.error.issues) {
+        const field = issue.path[0];
+        if (typeof field === "string" && !(field in errors)) {
+          errors[field] = issue.message;
+        }
+      }
+
+      return HttpResponse.json(
+        { message: "Validation failed", errors },
+        { status: 400 },
+      );
+    }
+
+    const values: TaskFormValues = result.data;
+    if (
+      tasks.some(
+        (task) =>
+          task.title.toLocaleLowerCase() === values.title.toLocaleLowerCase(),
+      )
+    ) {
+      return HttpResponse.json(
+        {
+          message: "Validation failed",
+          errors: { title: "A task with this title already exists." },
+        },
+        { status: 400 },
+      );
+    }
+
     const now = new Date().toISOString();
 
     const task: Task = {
-      ...input,
+      ...values,
       id: crypto.randomUUID(),
-      status: input.status ?? "todo",
       assigneeId: null,
       createdAt: now,
       updatedAt: now,
