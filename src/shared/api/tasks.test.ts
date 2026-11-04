@@ -12,6 +12,47 @@ afterEach(() => {
 });
 
 describe("task API response validation", () => {
+  it("rejects malformed task list payloads", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(Response.json([{ id: "task-1" }])),
+    );
+
+    await expect(getTasks({}, new AbortController().signal)).rejects.toBeInstanceOf(
+      z.ZodError,
+    );
+  });
+
+  it("rejects task lists with duplicate IDs", async () => {
+    const task = {
+      id: "task-1",
+      title: "Valid title",
+      description: "",
+      status: "todo",
+      priority: "medium",
+      assigneeId: null,
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(Response.json([task, task])),
+    );
+
+    await expect(getTasks({}, new AbortController().signal)).rejects.toBeInstanceOf(
+      z.ZodError,
+    );
+  });
+
+  it("accepts an empty task list", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(Response.json([])),
+    );
+
+    await expect(getTasks({}, new AbortController().signal)).resolves.toEqual([]);
+  });
+
   it("rejects invalid list, create, update, and delete responses", async () => {
     vi.stubGlobal(
       "fetch",
