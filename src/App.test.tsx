@@ -94,6 +94,31 @@ describe("App task workflow", () => {
     expect(await screen.findByText("Recover this task")).toBeTruthy();
   });
 
+  it("displays server-side field validation errors beside the matching field", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <App />
+      </QueryClientProvider>,
+    );
+
+    await screen.findByText("Task1");
+    fireEvent.change(screen.getByLabelText("Title"), {
+      target: { value: "Task1" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Create task" }));
+
+    const title = screen.getByLabelText("Title");
+    expect(
+      await screen.findByText("A task with this title already exists."),
+    ).toBeTruthy();
+    expect(title.getAttribute("aria-invalid")).toBe("true");
+    expect(title.getAttribute("aria-describedby")).toBe("task-title-error");
+    expect(screen.queryByText("Validation failed")).toBeNull();
+  });
+
   it("offers a retry when the route encounters a render error", () => {
     function ThrowWhenEnabled({ shouldThrow }: { shouldThrow: boolean }) {
       if (shouldThrow) {

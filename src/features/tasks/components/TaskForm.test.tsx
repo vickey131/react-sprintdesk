@@ -69,7 +69,7 @@ describe("TaskForm", () => {
         description: "Add form coverage",
         priority: "high",
         status: "in_progress",
-      }),
+      }, expect.any(Function)),
     );
   });
 
@@ -132,6 +132,7 @@ describe("TaskForm", () => {
     await waitFor(() =>
       expect(onSubmit).toHaveBeenCalledWith(
         expect.objectContaining({ title: "a".repeat(100) }),
+        expect.any(Function),
       ),
     );
   });
@@ -170,7 +171,7 @@ describe("TaskForm", () => {
         description: "Task details",
         priority: "high",
         status: "done",
-      });
+      }, expect.any(Function));
     });
   });
 

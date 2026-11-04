@@ -46,11 +46,17 @@ export class RouteErrorBoundary extends Component<
 function TaskManager() {
   const { createTaskMutation } = useTaskMutations();
 
-  function createTask(values: TaskFormValues) {
-    createTaskMutation.mutate({
-      ...values,
-      assigneeId: null,
-    });
+  function createTask(
+    values: TaskFormValues,
+    onError: (error: unknown) => void,
+  ) {
+    createTaskMutation.mutate(
+      {
+        ...values,
+        assigneeId: null,
+      },
+      { onError },
+    );
   }
 
   return (

@@ -5,14 +5,22 @@ import {
   type Task,
   type TaskFormValues,
 } from "../model";
+import { ApiError } from "../../../shared/api/http";
 
 export type { TaskFormValues } from "../model";
 
 interface TaskFormProps {
   task?: Task;
-  onSubmit: (values: TaskFormValues) => void;
+  onSubmit: (
+    values: TaskFormValues,
+    onError: (error: unknown) => void,
+  ) => void;
   onCancel?: () => void;
   isSubmitting?: boolean;
+}
+
+function isTaskFormField(field: string): field is keyof TaskFormValues {
+  return Object.prototype.hasOwnProperty.call(TaskFormSchema.shape, field);
 }
 
 export function TaskForm({
@@ -26,6 +34,7 @@ export function TaskForm({
     register,
     handleSubmit,
     setValue,
+    setError,
     formState: { errors },
   } = useForm<TaskFormValues>({
     resolver: zodResolver(TaskFormSchema),
@@ -43,7 +52,21 @@ export function TaskForm({
       aria-label={isEditing ? "Edit task" : "Create task"}
       onSubmit={handleSubmit((values) => {
         if (!isSubmitting) {
-          onSubmit(values);
+          onSubmit(values, (error) => {
+            if (
+              error instanceof ApiError &&
+              error.status === 400 &&
+              Object.keys(error.fieldErrors).length > 0
+            ) {
+              for (const [field, message] of Object.entries(
+                error.fieldErrors,
+              )) {
+                if (isTaskFormField(field)) {
+                  setError(field, { type: "server", message });
+                }
+              }
+            }
+          });
         }
       })}
       noValidate

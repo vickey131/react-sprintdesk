@@ -29,6 +29,28 @@ it("throws ApiError with the API message and status for HTTP errors", async () =
   });
 });
 
+it("preserves field validation errors from a 400 response", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue(
+      Response.json(
+        {
+          message: "Validation failed",
+          errors: { title: ["A task with this title already exists."] },
+        },
+        { status: 400 },
+      ),
+    ),
+  );
+
+  await expect(request("/api/tasks")).rejects.toMatchObject({
+    name: ApiError.name,
+    status: 400,
+    message: "Validation failed",
+    fieldErrors: { title: "A task with this title already exists." },
+  });
+});
+
 it("resolves undefined for a 204 response without parsing JSON", async () => {
   vi.stubGlobal(
     "fetch",
