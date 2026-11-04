@@ -44,6 +44,25 @@ it("creates a task", async () => {
   expect(task.id).toBeDefined();
 });
 
+it("returns field validation errors for a duplicate task title", async () => {
+  const response = await fetch(api, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      title: "Task1",
+      description: "Duplicate title",
+      status: "todo",
+      priority: "medium",
+    }),
+  });
+
+  expect(response.status).toBe(400);
+  expect(await response.json()).toMatchObject({
+    message: "Validation failed",
+    errors: { title: "A task with this title already exists." },
+  });
+});
+
 it("updates a task", async () => {
   const response = await fetch(`${api}/task-1`, {
     method: "PATCH",
