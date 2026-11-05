@@ -2,13 +2,13 @@ import {
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
-import type { Task } from "../model";
+import type { Task } from "../model/model";
 import {
   createTask,
   deleteTask,
   updateTask,
-} from "../../../shared/api/tasks";
-import { taskQueryKeys } from "../../../shared/api/taskQueryKeys";
+} from "../api/tasks";
+import { taskQueryKeys } from "../api/taskQueryKeys";
 
 export function useTaskMutations() {
   const queryClient = useQueryClient();

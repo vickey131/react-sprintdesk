@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, renderHook, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, expect, it, vi } from "vitest";
-import { taskQueryKeys } from "../../../shared/api/taskQueryKeys";
+import { taskQueryKeys } from "../api/taskQueryKeys";
 import { useTasksQuery } from "./useTasksQuery";
 
 afterEach(() => {

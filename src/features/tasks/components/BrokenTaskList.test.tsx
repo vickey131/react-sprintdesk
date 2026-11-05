@@ -11,7 +11,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { http, HttpResponse } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { axe } from "vitest-axe";
-import type { Task } from "../model";
+import type { Task } from "../model/model";
 import { BrokenTaskList } from "./BrokenTaskList";
 import { resetTasks } from "../../../shared/mocks/handlers";
 import { server } from "../../../shared/mocks/server";

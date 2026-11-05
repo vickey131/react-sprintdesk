@@ -7,7 +7,7 @@ import {
 } from "@testing-library/react";
 import { axe } from "vitest-axe";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { Task } from "../model";
+import type { Task } from "../model/model";
 import { TaskForm, type TaskFormValues } from "./TaskForm";
 
 afterEach(() => {

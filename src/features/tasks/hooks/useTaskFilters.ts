@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { Priority, Task, TaskStatus } from "../model";
+import type { Priority, Task, TaskStatus } from "../model/model";
 import { useDebouncedValue } from "./useDebouncedValue";
 
 type StatusFilter = TaskStatus | "all";

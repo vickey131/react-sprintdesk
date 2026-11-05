@@ -4,10 +4,10 @@ import {
   TaskFormSchema,
   type Task,
   type TaskFormValues,
-} from "../model";
-import { ApiError } from "../../../shared/api/http";
+} from "../model/model";
+import { ApiError } from "../../../shared/lib/http";
 
-export type { TaskFormValues } from "../model";
+export type { TaskFormValues } from "../model/model";
 
 interface TaskFormProps {
   task?: Task;

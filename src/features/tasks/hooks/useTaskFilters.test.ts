@@ -1,6 +1,6 @@
 import { act, cleanup, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { Task } from "../model";
+import type { Task } from "../model/model";
 import { useTaskFilters } from "./useTaskFilters";
 
 afterEach(() => {

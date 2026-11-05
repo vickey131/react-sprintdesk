@@ -1,5 +1,5 @@
 
-import type { Task } from "../../features/tasks/model";
+import type { Task } from "../model/model";
 
 export type TaskFilters = {
   search?: string;

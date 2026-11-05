@@ -4,7 +4,7 @@ import {
   TaskFormSchema,
   type Task,
   type TaskFormValues,
-} from "../../features/tasks/model";
+} from "../../features/tasks/model/model";
 
 const seedTasks: Task[] = [
   {

@@ -1,5 +1,5 @@
 import { memo } from "react";
-import type { Task, TaskStatus } from "../model";
+import type { Task, TaskStatus } from "../model/model";
 
 type TaskItemProps = {
   task: Task;

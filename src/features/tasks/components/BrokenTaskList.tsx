@@ -3,7 +3,7 @@ import { useCallback, useMemo, useState } from "react";
 import { useTaskMutations } from "../hooks/useTaskMutations";
 import { useTaskFilters } from "../hooks/useTaskFilters";
 import { useTasksQuery } from "../hooks/useTasksQuery";
-import { sampleTasks } from "../sampleTasks";
+import { sampleTasks } from "../model/sampleTasks";
 import { TaskItem } from "./TaskItem";
 
 export function BrokenTaskList() {
@@ -103,7 +103,7 @@ export function BrokenTaskList() {
       </p>
 
       <p aria-live="polite">
-        To do: {statusCounts.todo} | In progress: {statusCounts.inProgress} |
+        To do: {statusCounts.todo} | In progress: {statusCounts.inProgress} |  
         Done: {statusCounts.done}
       </p>
 

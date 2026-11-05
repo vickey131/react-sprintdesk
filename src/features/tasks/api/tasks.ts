@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { TaskSchema, type Task } from "../../features/tasks/model";
+import { TaskSchema, type Task } from "../model/model";
 import type { TaskFilters } from "./taskQueryKeys";
-import { request } from "./http";
+import { request } from "../../../shared/lib/http";
 
 type CreateTaskInput = Omit<Task, "id" | "createdAt" | "updatedAt">;
 

@@ -1,7 +1,7 @@
 import { useEffect, useReducer, type ReactNode } from "react";
 import { TasksContext, TasksDispatchContext } from "./TasksContext";
 import type { Task } from "./model";
-import { useLocalStorage } from "./hooks/useLocalStorage";
+import { useLocalStorage } from "../hooks/useLocalStorage";
 import { tasksReducer } from "./tasksReducer";
 
 const TASKS_STORAGE_KEY = "sprintdesk-tasks";
