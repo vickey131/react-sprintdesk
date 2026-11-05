@@ -166,7 +166,7 @@ export function TaskForm({
       </button>
       {onCancel && (
         <button type="button" onClick={onCancel} disabled={isSubmitting}>
-          Cancel
+          {isEditing ? "Discard changes" : "Cancel"}
         </button>
       )}
     </form>

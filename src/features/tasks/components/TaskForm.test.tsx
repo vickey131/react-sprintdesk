@@ -197,4 +197,11 @@ describe("TaskForm", () => {
 
     expect(onCancel).toHaveBeenCalledOnce();
   });
+
+  it("labels the cancel button 'Discard changes' in edit mode", () => {
+    render(<TaskForm task={createTask()} onSubmit={vi.fn()} onCancel={vi.fn()} />);
+
+    expect(screen.getByRole("button", { name: "Discard changes" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Cancel" })).toBeNull();
+  });
 });
