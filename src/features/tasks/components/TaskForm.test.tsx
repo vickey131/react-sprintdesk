@@ -97,14 +97,28 @@ describe("TaskForm", () => {
 
   it("disables and guards submission while a request is pending", () => {
     const onSubmit = vi.fn();
-    render(<TaskForm onSubmit={onSubmit} isSubmitting />);
+    const onCancel = vi.fn();
+    render(
+      <TaskForm onSubmit={onSubmit} onCancel={onCancel} isSubmitting />,
+    );
 
     expect(
       screen.getByRole("button", { name: "Saving..." }).hasAttribute("disabled"),
     ).toBe(true);
+    expect(
+      screen.getByRole("button", { name: "Cancel" }).hasAttribute("disabled"),
+    ).toBe(true);
     fireEvent.submit(screen.getByRole("form", { name: "Create task" }));
 
     expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it("keeps the Cancel button enabled when no request is pending", () => {
+    render(<TaskForm onSubmit={vi.fn()} onCancel={vi.fn()} />);
+
+    expect(
+      screen.getByRole("button", { name: "Cancel" }).hasAttribute("disabled"),
+    ).toBe(false);
   });
 
   it("prevents titles longer than 100 characters", () => {
