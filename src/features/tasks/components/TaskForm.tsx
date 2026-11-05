@@ -165,7 +165,7 @@ export function TaskForm({
       </button>
       {onCancel && (
         <button type="button" onClick={onCancel}>
-          Cancel
+          {isEditing ? "Discard changes" : "Cancel"}
         </button>
       )}
     </form>
