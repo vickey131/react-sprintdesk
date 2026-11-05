@@ -77,7 +77,7 @@ export function TaskForm({
           {...titleField}
           id="task-title"
           type="text"
-          placeholder="Enter task title"
+          placeholder="Enter task here"
           onChange={(event) => {
             if (event.currentTarget.value.length > 100) {
               event.currentTarget.value = event.currentTarget.value.slice(
@@ -94,6 +94,7 @@ export function TaskForm({
           maxLength={100}
           aria-invalid={Boolean(errors.title)}
           aria-describedby={errors.title ? "task-title-error" : undefined}
+          required
         />
         {errors.title?.message && (
           <p id="task-title-error" role="alert" aria-live="assertive">
