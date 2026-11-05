@@ -93,6 +93,7 @@ export function TaskForm({
           maxLength={100}
           aria-invalid={Boolean(errors.title)}
           aria-describedby={errors.title ? "task-title-error" : undefined}
+          required
         />
         {errors.title?.message && (
           <p id="task-title-error" role="alert" aria-live="assertive">
