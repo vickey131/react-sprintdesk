@@ -77,6 +77,7 @@ export function TaskForm({
           {...titleField}
           id="task-title"
           type="text"
+          placeholder="Enter task title"
           onChange={(event) => {
             if (event.currentTarget.value.length > 100) {
               event.currentTarget.value = event.currentTarget.value.slice(
