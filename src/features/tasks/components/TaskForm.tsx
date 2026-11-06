@@ -40,6 +40,7 @@ export function TaskForm({
     resolver: zodResolver(TaskFormSchema),
     defaultValues: {
       title: task?.title ?? "",
+      dueDate: "",
       description: task?.description ?? "",
       priority: task?.priority ?? "medium",
       status: task?.status ?? "todo",
@@ -72,7 +73,7 @@ export function TaskForm({
       noValidate
     >
       <div>
-        <label htmlFor="task-title">Title</label>
+        <label htmlFor="task-title">Task title</label>
         <input
           {...titleField}
           id="task-title"
@@ -100,6 +101,15 @@ export function TaskForm({
             {errors.title.message}
           </p>
         )}
+      </div>
+
+      <div>
+        <label htmlFor="task-due-date">Due date</label>
+        <input
+          {...register("dueDate")}
+          id="task-due-date"
+          type="date"
+        />
       </div>
 
       <div>
