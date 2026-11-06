@@ -55,7 +55,7 @@ describe("useTaskMutations", () => {
 
     result.current.updateTaskMutation.mutate({
       id: task.id,
-      status: "done",
+      updates: { status: "done" },
     });
 
     await waitFor(() => {
@@ -86,7 +86,7 @@ describe("useTaskMutations", () => {
 
     result.current.updateTaskMutation.mutate({
       id: task.id,
-      status: "done",
+      updates: { status: "done" },
     });
 
     await waitFor(() =>

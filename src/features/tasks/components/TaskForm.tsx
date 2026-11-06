@@ -33,20 +33,18 @@ export function TaskForm({
   const {
     register,
     handleSubmit,
-    setValue,
     setError,
     formState: { errors },
   } = useForm<TaskFormValues>({
     resolver: zodResolver(TaskFormSchema),
     defaultValues: {
       title: task?.title ?? "",
-      dueDate: "",
+      dueDate: task?.dueDate ?? "",
       description: task?.description ?? "",
       priority: task?.priority ?? "medium",
       status: task?.status ?? "todo",
     },
   });
-  const titleField = register("title");
 
   return (
     <form
@@ -75,24 +73,10 @@ export function TaskForm({
       <div>
         <label htmlFor="task-title">Task title (required)</label>
         <input
-          {...titleField}
+          {...register("title")}
           id="task-title"
           type="text"
           placeholder="Enter task title"
-          onChange={(event) => {
-            if (event.currentTarget.value.length > 100) {
-              event.currentTarget.value = event.currentTarget.value.slice(
-                0,
-                100,
-              );
-              setValue("title", event.currentTarget.value, {
-                shouldValidate: true,
-              });
-            } else {
-              titleField.onChange(event);
-            }
-          }}
-          maxLength={100}
           aria-invalid={Boolean(errors.title)}
           aria-describedby={
             errors.title

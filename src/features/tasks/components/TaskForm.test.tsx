@@ -141,7 +141,7 @@ describe("TaskForm", () => {
     ).toBe(false);
   });
 
-  it("prevents titles longer than 100 characters", () => {
+  it("rejects titles longer than 100 trimmed characters", async () => {
     const onSubmit = vi.fn();
     render(<TaskForm onSubmit={onSubmit} />);
 
@@ -150,7 +150,13 @@ describe("TaskForm", () => {
     });
     expect(screen.getByLabelText("Task title (required)")).toHaveProperty(
       "value",
-      "a".repeat(100)
+      "a".repeat(101),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Create task" }));
+
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect((await screen.findByRole("alert")).textContent).toBe(
+      "Title must be between 3 and 100 characters.",
     );
   });
 

@@ -20,9 +20,16 @@ export function useTaskMutations() {
     onSettled: invalidateTasks,
   });
   const updateTaskMutation = useMutation({
-    mutationFn: ({ id, status }: { id: Task["id"]; status: Task["status"] }) =>
-      updateTask(id, { status }),
-    onMutate: async ({ id, status }) => {
+    mutationFn: ({
+      id,
+      updates,
+    }: {
+      id: Task["id"];
+      updates: Partial<
+        Pick<Task, "title" | "description" | "status" | "priority" | "dueDate">
+      >;
+    }) => updateTask(id, updates),
+    onMutate: async ({ id, updates }) => {
       await queryClient.cancelQueries({ queryKey: taskQueryKeys.all });
       const previousTasks = queryClient.getQueriesData<Task[]>({
         queryKey: taskQueryKeys.all,
@@ -31,7 +38,7 @@ export function useTaskMutations() {
       queryClient.setQueriesData<Task[]>(
         { queryKey: taskQueryKeys.all },
         (tasks) =>
-          tasks?.map((task) => (task.id === id ? { ...task, status } : task)),
+          tasks?.map((task) => (task.id === id ? { ...task, ...updates } : task)),
       );
 
       return { previousTasks };
@@ -45,6 +52,13 @@ export function useTaskMutations() {
   });
   const deleteTaskMutation = useMutation({
     mutationFn: deleteTask,
+    onSuccess: async (_result, id) => {
+      await queryClient.cancelQueries({ queryKey: taskQueryKeys.all });
+      queryClient.setQueriesData<Task[]>(
+        { queryKey: taskQueryKeys.all },
+        (tasks) => tasks?.filter((task) => task.id !== id),
+      );
+    },
     onSettled: invalidateTasks,
   });
 

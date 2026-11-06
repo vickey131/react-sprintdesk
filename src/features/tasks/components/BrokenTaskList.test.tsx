@@ -5,6 +5,7 @@ import {
   screen,
   waitFor,
   waitForElementToBeRemoved,
+  within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -100,15 +101,25 @@ describe("BrokenTaskList", () => {
 
   it("completes and deletes tasks through the API", async () => {
     await renderTaskList();
+    const confirmation = vi.spyOn(window, "confirm").mockReturnValue(true);
 
     fireEvent.click(screen.getByLabelText("Complete First task"));
     await screen.findByText("1 of 2 completed");
 
-    fireEvent.click(screen.getAllByRole("button", { name: "Delete" })[0]);
+    const firstTaskRow = screen.getByText("First task").closest("li");
+    if (!firstTaskRow) {
+      throw new Error("First task row was not found.");
+    }
+    fireEvent.click(
+      within(firstTaskRow).getByRole("button", { name: "Delete" }),
+    );
+    expect(confirmation).toHaveBeenCalledTimes(2);
     await waitFor(() => {
       expect(screen.queryByText("First task")).toBeNull();
       expect(screen.getByText("0 of 1 completed")).toBeTruthy();
     });
+    expect(confirmation).toHaveBeenCalledTimes(2);
+    confirmation.mockRestore();
   });
 
   it("hides completed tasks when Show completed is turned off", async () => {

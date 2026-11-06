@@ -132,7 +132,15 @@ export const handlers = [
   http.patch("*/api/tasks/:id", async ({ params, request }) => {
     const id = String(params.id);
     const updates = (await request.json()) as Partial<
-      Pick<Task, "title" | "description" | "status" | "priority" | "assigneeId">
+      Pick<
+        Task,
+        | "title"
+        | "description"
+        | "status"
+        | "priority"
+        | "assigneeId"
+        | "dueDate"
+      >
     >;
 
     const existing = tasks.find((task) => task.id === id);

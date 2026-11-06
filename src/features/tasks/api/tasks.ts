@@ -57,7 +57,9 @@ export function createTask(input: CreateTaskInput) {
 
 export function updateTask(
   id: Task["id"],
-  updates: Partial<Pick<Task, "status">>,
+  updates: Partial<
+    Pick<Task, "title" | "description" | "status" | "priority" | "dueDate">
+  >,
 ) {
   return request(`/api/tasks/${encodeURIComponent(id)}`, {
     method: "PATCH",
