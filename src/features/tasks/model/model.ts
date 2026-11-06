@@ -25,6 +25,7 @@ export const TaskFormSchema = z.object({
     .trim()
     .min(3, "Title must be between 3 and 100 characters.")
     .max(100, "Title must be between 3 and 100 characters."),
+  dueDate: z.string().optional(),
   description: z.string(),
   priority: PrioritySchema,
   status: TaskStatusSchema,
