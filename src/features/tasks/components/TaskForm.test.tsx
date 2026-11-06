@@ -50,7 +50,7 @@ describe("TaskForm", () => {
 
     expect(
       screen
-        .getByLabelText("Title (required)")
+        .getByLabelText("Task title (required)")
         .getAttribute("aria-describedby"),
     ).toBe("task-title-hint");
     expect(screen.getByText("3–100 characters")).toBeTruthy();
@@ -60,8 +60,12 @@ describe("TaskForm", () => {
     const onSubmit = vi.fn<(values: TaskFormValues) => void>();
     render(<TaskForm onSubmit={onSubmit} />);
 
-    fireEvent.change(screen.getByLabelText("Title (required)"), {
+    expect(screen.getByLabelText("Due date")).toHaveProperty("type", "date");
+    fireEvent.change(screen.getByLabelText("Task title (required)"), {
       target: { value: "  Write tests  " },
+    });
+    fireEvent.change(screen.getByLabelText("Due date"), {
+      target: { value: "2026-12-31" },
     });
     fireEvent.change(screen.getByLabelText("Description"), {
       target: { value: "Add form coverage" },
@@ -77,6 +81,7 @@ describe("TaskForm", () => {
     await waitFor(() =>
       expect(onSubmit).toHaveBeenCalledWith({
         title: "Write tests",
+        dueDate: "2026-12-31",
         description: "Add form coverage",
         priority: "high",
         status: "in_progress",
@@ -88,7 +93,7 @@ describe("TaskForm", () => {
     const onSubmit = vi.fn();
     const { container } = render(<TaskForm onSubmit={onSubmit} />);
 
-    fireEvent.change(screen.getByLabelText("Title (required)"), {
+    fireEvent.change(screen.getByLabelText("Task title (required)"), {
       target: { value: "  a  " },
     });
     fireEvent.click(screen.getByRole("button", { name: "Create task" }));
@@ -99,11 +104,13 @@ describe("TaskForm", () => {
         "Title must be between 3 and 100 characters.",
       );
       expect(
-        screen.getByLabelText("Title (required)").getAttribute("aria-describedby"),
-      ).toBe(
-        "task-title-hint task-title-error",
+        screen
+          .getByLabelText("Task title (required)")
+          .getAttribute("aria-describedby"),
+      ).toBe("task-title-hint task-title-error");
+      expect(document.activeElement).toBe(
+        screen.getByLabelText("Task title (required)"),
       );
-      expect(document.activeElement).toBe(screen.getByLabelText("Title (required)"));
     });
     expect((await axe(container)).violations).toHaveLength(0);
   });
@@ -138,10 +145,10 @@ describe("TaskForm", () => {
     const onSubmit = vi.fn();
     render(<TaskForm onSubmit={onSubmit} />);
 
-    fireEvent.change(screen.getByLabelText("Title (required)"), {
+    fireEvent.change(screen.getByLabelText("Task title (required)"), {
       target: { value: "a".repeat(101) },
     });
-    expect(screen.getByLabelText("Title (required)")).toHaveProperty(
+    expect(screen.getByLabelText("Task title (required)")).toHaveProperty(
       "value",
       "a".repeat(100)
     );
@@ -151,7 +158,7 @@ describe("TaskForm", () => {
     const onSubmit = vi.fn<(values: TaskFormValues) => void>();
     render(<TaskForm onSubmit={onSubmit} />);
 
-    fireEvent.change(screen.getByLabelText("Title (required)"), {
+    fireEvent.change(screen.getByLabelText("Task title (required)"), {
       target: { value: "a".repeat(100) },
     });
     fireEvent.click(screen.getByRole("button", { name: "Create task" }));
@@ -170,7 +177,7 @@ describe("TaskForm", () => {
     render(<TaskForm task={task} onSubmit={onSubmit} />);
 
     expect(screen.getByRole("form", { name: "Edit task" })).toBeTruthy();
-    expect(screen.getByLabelText("Title (required)")).toHaveProperty(
+    expect(screen.getByLabelText("Task title (required)")).toHaveProperty(
       "value",
       "Existing task"
     );
@@ -184,7 +191,7 @@ describe("TaskForm", () => {
       "in_progress"
     );
 
-    fireEvent.change(screen.getByLabelText("Title (required)"), {
+    fireEvent.change(screen.getByLabelText("Task title (required)"), {
       target: { value: "Updated task" },
     });
     fireEvent.change(screen.getByLabelText("Status"), {
@@ -195,6 +202,7 @@ describe("TaskForm", () => {
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalledWith({
         title: "Updated task",
+        dueDate: "",
         description: "Task details",
         priority: "high",
         status: "done",
