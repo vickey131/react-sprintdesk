@@ -23,7 +23,7 @@ describe("App task workflow", () => {
 
     await screen.findByText("Task1");
 
-    fireEvent.change(screen.getByLabelText("Task title"), {
+    fireEvent.change(screen.getByLabelText("Task title (required)"), {
       target: { value: "Plan sprint" },
     });
     fireEvent.change(screen.getByLabelText("Description"), {
@@ -57,7 +57,7 @@ describe("App task workflow", () => {
     );
 
     await screen.findByText("Task1");
-    fireEvent.change(screen.getByLabelText("Task title"), {
+    fireEvent.change(screen.getByLabelText("Task title (required)"), {
       target: { value: "Recover this task" },
     });
     fireEvent.change(screen.getByLabelText("Description"), {
@@ -74,7 +74,7 @@ describe("App task workflow", () => {
     expect((await screen.findByRole("alert")).textContent).toContain(
       "Create failed",
     );
-    expect(screen.getByLabelText("Task title")).toHaveProperty(
+    expect(screen.getByLabelText("Task title (required)")).toHaveProperty(
       "value",
       "Recover this task",
     );

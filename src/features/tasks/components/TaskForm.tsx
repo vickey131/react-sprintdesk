@@ -73,7 +73,7 @@ export function TaskForm({
       noValidate
     >
       <div>
-        <label htmlFor="task-title">Task title</label>
+        <label htmlFor="task-title">Task title (required)</label>
         <input
           {...titleField}
           id="task-title"
@@ -94,8 +94,13 @@ export function TaskForm({
           }}
           maxLength={100}
           aria-invalid={Boolean(errors.title)}
-          aria-describedby={errors.title ? "task-title-error" : undefined}
+          aria-describedby={
+            errors.title
+              ? "task-title-hint task-title-error"
+              : "task-title-hint"
+          }
         />
+        <p id="task-title-hint">3–100 characters</p>
         {errors.title?.message && (
           <p id="task-title-error" role="alert" aria-live="assertive">
             {errors.title.message}
