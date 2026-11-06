@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { Priority, Task, TaskStatus } from "../model";
+import type { Priority, Task, TaskStatus } from "../model/model";
 import { useDebouncedValue } from "./useDebouncedValue";
 
 type StatusFilter = TaskStatus | "all";
@@ -14,7 +14,7 @@ const PRIORITY_ORDER = {
 export function useTaskFilters(tasks: Task[]) {
   const [showCompleted, setShowCompleted] = useState(true);
   const [sortByPriority, setSortByPriority] = useState(false);
-  const [sortByDate, setSortByDate] = useState(false);
+  const [sortByDate, setSortByDate] = useState(true);
   const [locationSearch, setLocationSearch] = useState(
     () => window.location.search,
   );
@@ -76,6 +76,18 @@ export function useTaskFilters(tasks: Task[]) {
     updateSearchParam("priority", value === "all" ? null : value);
   }
 
+  function selectPrioritySort(enabled: boolean) {
+    setSortByPriority(enabled);
+    setSortByDate(!enabled);
+  }
+
+  function selectDateSort(enabled: boolean) {
+    if (enabled) {
+      setSortByPriority(false);
+      setSortByDate(true);
+    }
+  }
+
   function getVisibleTasks(tasksToFilter: Task[]) {
     const visibleTasks = tasksToFilter.filter((task) => {
       return showCompleted || task.status !== "done";
@@ -103,9 +115,9 @@ export function useTaskFilters(tasks: Task[]) {
     showCompleted,
     setShowCompleted,
     sortByPriority,
-    setSortByPriority,
+    setSortByPriority: selectPrioritySort,
     sortByDate,
-    setSortByDate,
+    setSortByDate: selectDateSort,
     searchQuery,
     setSearchQuery,
     statusFilter,

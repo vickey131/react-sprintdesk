@@ -11,10 +11,13 @@ export const PrioritySchema = z.enum(["low", "medium", "high"], {
 export const TaskSchema = z.object({
   id: z.string(),
   title: z.string(),
-  description: z.string(),
+  description: z
+    .string()
+    .max(1000, "Description must be 1000 characters or fewer."),
   status: TaskStatusSchema,
   priority: PrioritySchema,
   assigneeId: z.string().nullable(),
+  dueDate: z.string().optional(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });
@@ -25,6 +28,7 @@ export const TaskFormSchema = z.object({
     .trim()
     .min(3, "Title must be between 3 and 100 characters.")
     .max(100, "Title must be between 3 and 100 characters."),
+  dueDate: z.string().optional(),
   description: z.string(),
   priority: PrioritySchema,
   status: TaskStatusSchema,

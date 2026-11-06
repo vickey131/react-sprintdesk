@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { http, HttpResponse } from "msw";
 import { useState } from "react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import App, { RouteErrorBoundary } from "./App";
 import { server } from "./shared/mocks/server";
 
@@ -12,6 +12,7 @@ afterEach(() => {
 
 describe("App task workflow", () => {
   it("adds a submitted task to the API-backed task list", async () => {
+    const confirmation = vi.spyOn(window, "confirm").mockReturnValue(true);
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });
@@ -23,7 +24,7 @@ describe("App task workflow", () => {
 
     await screen.findByText("Task1");
 
-    fireEvent.change(screen.getByLabelText("Title"), {
+    fireEvent.change(screen.getByLabelText("Task title (required)"), {
       target: { value: "Plan sprint" },
     });
     fireEvent.change(screen.getByLabelText("Description"), {
@@ -39,6 +40,8 @@ describe("App task workflow", () => {
 
     fireEvent.click(screen.getByLabelText("Complete Plan sprint"));
     expect(await screen.findByText("2 of 4 completed")).toBeTruthy();
+    expect(confirmation).toHaveBeenCalledOnce();
+    confirmation.mockRestore();
   });
 
   it("preserves task form values and retries a failed submission", async () => {
@@ -57,7 +60,7 @@ describe("App task workflow", () => {
     );
 
     await screen.findByText("Task1");
-    fireEvent.change(screen.getByLabelText("Title"), {
+    fireEvent.change(screen.getByLabelText("Task title (required)"), {
       target: { value: "Recover this task" },
     });
     fireEvent.change(screen.getByLabelText("Description"), {
@@ -74,7 +77,7 @@ describe("App task workflow", () => {
     expect((await screen.findByRole("alert")).textContent).toContain(
       "Create failed",
     );
-    expect(screen.getByLabelText("Title")).toHaveProperty(
+    expect(screen.getByLabelText("Task title (required)")).toHaveProperty(
       "value",
       "Recover this task",
     );

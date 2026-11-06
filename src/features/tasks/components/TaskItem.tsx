@@ -1,14 +1,24 @@
 import { memo } from "react";
-import type { Task, TaskStatus } from "../model";
+import type { ReactNode } from "react";
+import type { Task, TaskStatus } from "../model/model";
 
 type TaskItemProps = {
   task: Task;
   disabled: boolean;
   onToggle: (id: Task["id"], nextStatus: TaskStatus) => void;
+  onEdit: (task: Task) => void;
   onDelete: (id: Task["id"]) => void;
+  children?: ReactNode;
 };
 
-function TaskItemComponent({ task, disabled, onToggle, onDelete }: TaskItemProps) {
+function TaskItemComponent({
+  task,
+  disabled,
+  onToggle,
+  onEdit,
+  onDelete,
+  children,
+}: TaskItemProps) {
   return (
     <li>
       <input
@@ -26,10 +36,16 @@ function TaskItemComponent({ task, disabled, onToggle, onDelete }: TaskItemProps
       <small> - {task.status.replace("_", " ")}</small>
 
       {!disabled && (
-        <button type="button" onClick={() => onDelete(task.id)}>
-          Delete
-        </button>
+        <>
+          <button type="button" onClick={() => onEdit(task)}>
+            Edit
+          </button>
+          <button type="button" onClick={() => onDelete(task.id)}>
+            Delete
+          </button>
+        </>
       )}
+      {children}
     </li>
   );
 }

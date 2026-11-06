@@ -7,7 +7,7 @@ import {
 } from "@testing-library/react";
 import { axe } from "vitest-axe";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { Task } from "../model";
+import type { Task } from "../model/model";
 import { TaskForm, type TaskFormValues } from "./TaskForm";
 
 afterEach(() => {
@@ -45,12 +45,27 @@ describe("TaskForm", () => {
     expect((await axe(container)).violations).toHaveLength(0);
   });
 
+  it("shows the required title label and linked character-count hint", () => {
+    render(<TaskForm onSubmit={vi.fn()} />);
+
+    expect(
+      screen
+        .getByLabelText("Task title (required)")
+        .getAttribute("aria-describedby"),
+    ).toBe("task-title-hint");
+    expect(screen.getByText("3–100 characters")).toBeTruthy();
+  });
+
   it("submits trimmed title, description, priority, and status in create mode", async () => {
     const onSubmit = vi.fn<(values: TaskFormValues) => void>();
     render(<TaskForm onSubmit={onSubmit} />);
 
-    fireEvent.change(screen.getByLabelText("Title"), {
+    expect(screen.getByLabelText("Due date")).toHaveProperty("type", "date");
+    fireEvent.change(screen.getByLabelText("Task title (required)"), {
       target: { value: "  Write tests  " },
+    });
+    fireEvent.change(screen.getByLabelText("Due date"), {
+      target: { value: "2026-12-31" },
     });
     fireEvent.change(screen.getByLabelText("Description"), {
       target: { value: "Add form coverage" },
@@ -66,6 +81,7 @@ describe("TaskForm", () => {
     await waitFor(() =>
       expect(onSubmit).toHaveBeenCalledWith({
         title: "Write tests",
+        dueDate: "2026-12-31",
         description: "Add form coverage",
         priority: "high",
         status: "in_progress",
@@ -77,7 +93,7 @@ describe("TaskForm", () => {
     const onSubmit = vi.fn();
     const { container } = render(<TaskForm onSubmit={onSubmit} />);
 
-    fireEvent.change(screen.getByLabelText("Title"), {
+    fireEvent.change(screen.getByLabelText("Task title (required)"), {
       target: { value: "  a  " },
     });
     fireEvent.click(screen.getByRole("button", { name: "Create task" }));
@@ -87,36 +103,60 @@ describe("TaskForm", () => {
       expect(screen.getByRole("alert").textContent).toBe(
         "Title must be between 3 and 100 characters.",
       );
-      expect(screen.getByLabelText("Title").getAttribute("aria-describedby")).toBe(
-        "task-title-error",
+      expect(
+        screen
+          .getByLabelText("Task title (required)")
+          .getAttribute("aria-describedby"),
+      ).toBe("task-title-hint task-title-error");
+      expect(document.activeElement).toBe(
+        screen.getByLabelText("Task title (required)"),
       );
-      expect(document.activeElement).toBe(screen.getByLabelText("Title"));
     });
     expect((await axe(container)).violations).toHaveLength(0);
   });
 
   it("disables and guards submission while a request is pending", () => {
     const onSubmit = vi.fn();
-    render(<TaskForm onSubmit={onSubmit} isSubmitting />);
+    const onCancel = vi.fn();
+    render(
+      <TaskForm onSubmit={onSubmit} onCancel={onCancel} isSubmitting />,
+    );
 
     expect(
       screen.getByRole("button", { name: "Saving..." }).hasAttribute("disabled"),
+    ).toBe(true);
+    expect(
+      screen.getByRole("button", { name: "Cancel" }).hasAttribute("disabled"),
     ).toBe(true);
     fireEvent.submit(screen.getByRole("form", { name: "Create task" }));
 
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
-  it("prevents titles longer than 100 characters", () => {
+  it("keeps the Cancel button enabled when no request is pending", () => {
+    render(<TaskForm onSubmit={vi.fn()} onCancel={vi.fn()} />);
+
+    expect(
+      screen.getByRole("button", { name: "Cancel" }).hasAttribute("disabled"),
+    ).toBe(false);
+  });
+
+  it("rejects titles longer than 100 trimmed characters", async () => {
     const onSubmit = vi.fn();
     render(<TaskForm onSubmit={onSubmit} />);
 
-    fireEvent.change(screen.getByLabelText("Title"), {
+    fireEvent.change(screen.getByLabelText("Task title (required)"), {
       target: { value: "a".repeat(101) },
     });
-    expect(screen.getByLabelText("Title")).toHaveProperty(
+    expect(screen.getByLabelText("Task title (required)")).toHaveProperty(
       "value",
-      "a".repeat(100)
+      "a".repeat(101),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Create task" }));
+
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect((await screen.findByRole("alert")).textContent).toBe(
+      "Title must be between 3 and 100 characters.",
     );
   });
 
@@ -124,7 +164,7 @@ describe("TaskForm", () => {
     const onSubmit = vi.fn<(values: TaskFormValues) => void>();
     render(<TaskForm onSubmit={onSubmit} />);
 
-    fireEvent.change(screen.getByLabelText("Title"), {
+    fireEvent.change(screen.getByLabelText("Task title (required)"), {
       target: { value: "a".repeat(100) },
     });
     fireEvent.click(screen.getByRole("button", { name: "Create task" }));
@@ -143,7 +183,7 @@ describe("TaskForm", () => {
     render(<TaskForm task={task} onSubmit={onSubmit} />);
 
     expect(screen.getByRole("form", { name: "Edit task" })).toBeTruthy();
-    expect(screen.getByLabelText("Title")).toHaveProperty(
+    expect(screen.getByLabelText("Task title (required)")).toHaveProperty(
       "value",
       "Existing task"
     );
@@ -157,7 +197,7 @@ describe("TaskForm", () => {
       "in_progress"
     );
 
-    fireEvent.change(screen.getByLabelText("Title"), {
+    fireEvent.change(screen.getByLabelText("Task title (required)"), {
       target: { value: "Updated task" },
     });
     fireEvent.change(screen.getByLabelText("Status"), {
@@ -168,6 +208,7 @@ describe("TaskForm", () => {
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalledWith({
         title: "Updated task",
+        dueDate: "",
         description: "Task details",
         priority: "high",
         status: "done",
@@ -182,5 +223,12 @@ describe("TaskForm", () => {
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
 
     expect(onCancel).toHaveBeenCalledOnce();
+  });
+
+  it("labels the cancel button 'Discard changes' in edit mode", () => {
+    render(<TaskForm task={createTask()} onSubmit={vi.fn()} onCancel={vi.fn()} />);
+
+    expect(screen.getByRole("button", { name: "Discard changes" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Cancel" })).toBeNull();
   });
 });

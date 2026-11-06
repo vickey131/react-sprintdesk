@@ -4,10 +4,10 @@ import {
   TaskFormSchema,
   type Task,
   type TaskFormValues,
-} from "../model";
-import { ApiError } from "../../../shared/api/http";
+} from "../model/model";
+import { ApiError } from "../../../shared/lib/http";
 
-export type { TaskFormValues } from "../model";
+export type { TaskFormValues } from "../model/model";
 
 interface TaskFormProps {
   task?: Task;
@@ -33,19 +33,18 @@ export function TaskForm({
   const {
     register,
     handleSubmit,
-    setValue,
     setError,
     formState: { errors },
   } = useForm<TaskFormValues>({
     resolver: zodResolver(TaskFormSchema),
     defaultValues: {
       title: task?.title ?? "",
+      dueDate: task?.dueDate ?? "",
       description: task?.description ?? "",
       priority: task?.priority ?? "medium",
       status: task?.status ?? "todo",
     },
   });
-  const titleField = register("title");
 
   return (
     <form
@@ -72,33 +71,34 @@ export function TaskForm({
       noValidate
     >
       <div>
-        <label htmlFor="task-title">Title</label>
+        <label htmlFor="task-title">Task title (required)</label>
         <input
-          {...titleField}
+          {...register("title")}
           id="task-title"
           type="text"
-          onChange={(event) => {
-            if (event.currentTarget.value.length > 100) {
-              event.currentTarget.value = event.currentTarget.value.slice(
-                0,
-                100,
-              );
-              setValue("title", event.currentTarget.value, {
-                shouldValidate: true,
-              });
-            } else {
-              titleField.onChange(event);
-            }
-          }}
-          maxLength={100}
+          placeholder="Enter task title"
           aria-invalid={Boolean(errors.title)}
-          aria-describedby={errors.title ? "task-title-error" : undefined}
+          aria-describedby={
+            errors.title
+              ? "task-title-hint task-title-error"
+              : "task-title-hint"
+          }
         />
+        <p id="task-title-hint">3–100 characters</p>
         {errors.title?.message && (
           <p id="task-title-error" role="alert" aria-live="assertive">
             {errors.title.message}
           </p>
         )}
+      </div>
+
+      <div>
+        <label htmlFor="task-due-date">Due date</label>
+        <input
+          {...register("dueDate")}
+          id="task-due-date"
+          type="date"
+        />
       </div>
 
       <div>
@@ -164,8 +164,8 @@ export function TaskForm({
             : "Create task"}
       </button>
       {onCancel && (
-        <button type="button" onClick={onCancel}>
-          Cancel
+        <button type="button" onClick={onCancel} disabled={isSubmitting}>
+          {isEditing ? "Discard changes" : "Cancel"}
         </button>
       )}
     </form>

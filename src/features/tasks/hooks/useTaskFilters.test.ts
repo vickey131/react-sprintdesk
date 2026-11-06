@@ -1,6 +1,6 @@
 import { act, cleanup, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { Task } from "../model";
+import type { Task } from "../model/model";
 import { useTaskFilters } from "./useTaskFilters";
 
 afterEach(() => {
@@ -45,13 +45,18 @@ function createTasks(): Task[] {
 }
 
 describe("useTaskFilters", () => {
-  it("includes completed tasks by default and preserves input order", () => {
+  it("includes completed tasks by default and sorts newest first", () => {
     const tasks = createTasks();
     const { result } = renderHook(() => useTaskFilters(tasks));
 
-    expect(result.current.visibleTasks).toEqual(tasks);
+    expect(result.current.visibleTasks.map((task) => task.id)).toEqual([
+      "3",
+      "2",
+      "1",
+    ]);
     expect(result.current.showCompleted).toBe(true);
     expect(result.current.sortByPriority).toBe(false);
+    expect(result.current.sortByDate).toBe(true);
   });
 
   it("hides completed tasks when requested", () => {
@@ -63,8 +68,8 @@ describe("useTaskFilters", () => {
     });
 
     expect(result.current.visibleTasks.map((task) => task.id)).toEqual([
-      "1",
       "3",
+      "1",
     ]);
   });
 

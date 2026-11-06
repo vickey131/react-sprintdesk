@@ -1,2 +1,2 @@
-export { TasksProvider } from "./TasksProvider";
-export { useTasks } from "./useTasks";
+export { TasksProvider } from "./model/TasksProvider";
+export { useTasks } from "./hooks/useTasks";

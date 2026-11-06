@@ -1,13 +1,17 @@
 
 import { useCallback, useMemo, useState } from "react";
+import type { Task, TaskFormValues } from "../model/model";
 import { useTaskMutations } from "../hooks/useTaskMutations";
 import { useTaskFilters } from "../hooks/useTaskFilters";
 import { useTasksQuery } from "../hooks/useTasksQuery";
-import { sampleTasks } from "../sampleTasks";
+import { sampleTasks } from "../model/sampleTasks";
+import { TaskForm } from "./TaskForm";
 import { TaskItem } from "./TaskItem";
 
 export function BrokenTaskList() {
   const [showSampleTasks, setShowSampleTasks] = useState(false);
+  const [showHighPriorityTasks, setShowHighPriorityTasks] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
   const {
     getVisibleTasks,
     showCompleted,
@@ -64,19 +68,69 @@ export function BrokenTaskList() {
     updateTaskMutation,
     deleteTaskMutation,
   } = useTaskMutations();
+  const updateTask = updateTaskMutation.mutate;
 
   // `.mutate` is the stable reference we actually need; the enclosing
   // mutation object is recreated every render and would defeat memoization.
   const handleToggleTask = useCallback(
-    (id: string, nextStatus: "todo" | "in_progress" | "done") =>
-      updateTaskMutation.mutate({ id, status: nextStatus }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [updateTaskMutation.mutate],
+    (id: string, nextStatus: "todo" | "in_progress" | "done") => {
+      const task = allTasks.find((item) => item.id === id);
+      if (
+        task?.status === "todo" &&
+        nextStatus === "done" &&
+        !window.confirm("Move this task directly from To do to Done?")
+      ) {
+        return;
+      }
+      updateTask({ id, updates: { status: nextStatus } });
+    },
+    [allTasks, updateTask],
   );
   const handleDeleteTask = useCallback(
-    (id: string) => deleteTaskMutation.mutate(id),
+    (id: string) => {
+      if (window.confirm("Delete this task?")) {
+        deleteTaskMutation.mutate(id);
+      }
+    },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [deleteTaskMutation.mutate],
+  );
+  const handleEditTask = useCallback(
+    (task: Task) => setEditingTask(task),
+    [],
+  );
+  const handleUpdateTask = useCallback(
+    (
+      task: Task,
+      values: TaskFormValues,
+      onError: (error: unknown) => void,
+    ) => {
+      if (
+        task.status === "todo" &&
+        values.status === "done" &&
+        !window.confirm("Move this task directly from To do to Done?")
+      ) {
+        return;
+      }
+
+      updateTask(
+        {
+          id: task.id,
+          updates: {
+            title: values.title,
+            description: values.description,
+            dueDate: values.dueDate,
+            status: values.status,
+            priority: values.priority,
+          },
+        },
+        {
+          onError,
+          onSuccess: () => setEditingTask(null),
+        },
+      );
+    },
+    [updateTask],
   );
 
   const statusCounts = useMemo(
@@ -93,6 +147,9 @@ export function BrokenTaskList() {
     [allTasks],
   );
   const completedCount = statusCounts.done;
+  const highPriorityOpenTasks = allTasks.filter(
+    (task) => task.priority === "high" && task.status !== "done",
+  );
 
   return (
     <section aria-labelledby="tasks-heading">
@@ -103,8 +160,11 @@ export function BrokenTaskList() {
       </p>
 
       <p aria-live="polite">
-        To do: {statusCounts.todo} | In progress: {statusCounts.inProgress} |
+        To do: {statusCounts.todo} | In progress: {statusCounts.inProgress} |  
         Done: {statusCounts.done}
+      </p>
+      <p>
+        High-priority tasks not done: {highPriorityOpenTasks.length}
       </p>
 
       <fieldset>
@@ -171,7 +231,7 @@ export function BrokenTaskList() {
         <button
           type="button"
           aria-pressed={sortByPriority}
-          onClick={() => setSortByPriority((current) => !current)}
+          onClick={() => setSortByPriority(!sortByPriority)}
         >
           {sortByPriority ? "Clear priority sort" : "Sort by priority"}
         </button>
@@ -179,9 +239,9 @@ export function BrokenTaskList() {
         <button
           type="button"
           aria-pressed={sortByDate}
-          onClick={() => setSortByDate((current) => !current)}
+          onClick={() => setSortByDate(true)}
         >
-          {sortByDate ? "Clear date sort" : "Sort by date"}
+          Sort by date
         </button>
       </fieldset>
 
@@ -208,11 +268,54 @@ export function BrokenTaskList() {
               task={task}
               disabled={showSampleTasks}
               onToggle={handleToggleTask}
+              onEdit={handleEditTask}
               onDelete={handleDeleteTask}
-            />
+            >
+              {editingTask?.id === task.id && (
+                <TaskForm
+                  task={editingTask}
+                  onSubmit={(values, onError) =>
+                    handleUpdateTask(editingTask, values, onError)
+                  }
+                  onCancel={() => setEditingTask(null)}
+                  isSubmitting={updateTaskMutation.isPending}
+                />
+              )}
+            </TaskItem>
           ))
         )}
       </ul>
+      {highPriorityOpenTasks.length > 0 && (
+        <>
+          <button
+            type="button"
+            aria-expanded={showHighPriorityTasks}
+            onClick={() => setShowHighPriorityTasks((visible) => !visible)}
+          >
+            {showHighPriorityTasks
+              ? "Hide high-priority tasks"
+              : "View high-priority tasks"}
+          </button>
+          {showHighPriorityTasks && (
+            <ul aria-label="High-priority tasks not done">
+              {highPriorityOpenTasks.map((task) => (
+                <li key={task.id}>{task.title}</li>
+              ))}
+            </ul>
+          )}
+        </>
+      )}
+      {visibleTasks.length === 0 && allTasks.length > 0 && (
+        <button
+          type="button"
+          onClick={() => {
+            setStatusFilter("all");
+            setPriorityFilter("all");
+          }}
+        >
+          Clear filters
+        </button>
+      )}
       {(updateTaskMutation.isError || deleteTaskMutation.isError) && (
         <p role="alert" aria-live="assertive">
           {(updateTaskMutation.error ?? deleteTaskMutation.error)?.message}

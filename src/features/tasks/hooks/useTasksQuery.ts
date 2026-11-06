@@ -1,9 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
-import { getTasks } from "../../../shared/api/tasks";
+import { getTasks } from "../api/tasks";
 import {
   taskQueryKeys,
   type TaskFilters,
-} from "../../../shared/api/taskQueryKeys";
+} from "../api/taskQueryKeys";
 
 export function useTasksQuery(filters: TaskFilters = {}) {
   return useQuery({

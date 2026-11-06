@@ -2,8 +2,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, renderHook, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { taskQueryKeys } from "../../../shared/api/taskQueryKeys";
-import type { Task } from "../model";
+import { taskQueryKeys } from "../api/taskQueryKeys";
+import type { Task } from "../model/model";
 import { useTaskMutations } from "./useTaskMutations";
 
 afterEach(() => {
@@ -55,7 +55,7 @@ describe("useTaskMutations", () => {
 
     result.current.updateTaskMutation.mutate({
       id: task.id,
-      status: "done",
+      updates: { status: "done" },
     });
 
     await waitFor(() => {
@@ -86,7 +86,7 @@ describe("useTaskMutations", () => {
 
     result.current.updateTaskMutation.mutate({
       id: task.id,
-      status: "done",
+      updates: { status: "done" },
     });
 
     await waitFor(() =>

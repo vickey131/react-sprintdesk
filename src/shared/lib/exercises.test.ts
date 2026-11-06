@@ -14,9 +14,9 @@ import {
   createCounter,
   debounce,
   fetchWithFallback,
-} from "./exercises";
+} from "../../shared/lib/exercises";
 
-import type { Employee } from "./exercises";
+import type { Employee } from "../../shared/lib/exercises";
 
 const employees: Employee[] = [
   { id: 1, name: "Vignesh", department: "Engineering", active: true },
